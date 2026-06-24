@@ -31,6 +31,13 @@ app.use('/api/seances',     seancesRouter);
 app.use('/api/pointeurs',   pointeursRouter);
 app.use('/api/dashboard',  dashboardRouter);
 
+// Servir le front en production
+const clientDist = path.join(__dirname, '../../client/dist');
+app.use(express.static(clientDist));
+app.get('*', (req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'));
+});
+
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: 'Erreur serveur', message: err.message });
