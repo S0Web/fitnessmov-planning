@@ -36,7 +36,7 @@ app.use('/api/pointeurs',   pointeursRouter);
 app.use('/api/dashboard',  dashboardRouter);
 
 // Servir le front en production
-const clientDist = path.join(__dirname, '../../client/dist');
+const clientDist = path.join(__dirname, '../public');
 app.use(express.static(clientDist));
 app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
