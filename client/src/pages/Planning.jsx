@@ -301,7 +301,7 @@ export default function Planning() {
     <div className="flex gap-4">
 
       {/* ── Sidebar ──────────────────────────────────────────────────── */}
-      <aside className="w-48 flex-shrink-0">
+      <aside className="hidden lg:block w-48 flex-shrink-0">
         <MiniCalendar lundi={lundi} onSelectDate={(d) => setLundi(getLundi(d))} />
 
         <div className="mt-3 bg-white border border-gray-200 rounded px-3 py-2 text-xs space-y-1.5">
@@ -320,31 +320,38 @@ export default function Planning() {
       <div className="flex-1 min-w-0">
 
         {/* Barre navigation */}
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 mb-3">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0">
             <button onClick={() => setLundi(semainePrecedente(lundi))}
-              className="px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">←</button>
+              className="px-2.5 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">←</button>
             <button onClick={() => setLundi(getLundi())}
               style={isCurrentWeek ? { backgroundColor: '#2fa8cc', color: '#fff' } : {}}
-            className={`px-3 py-1.5 text-sm font-medium rounded transition-colors ${
+              className={`px-2.5 py-1.5 text-sm font-medium rounded transition-colors ${
                 isCurrentWeek ? '' : 'border border-gray-300 text-gray-600 hover:bg-gray-100'
-              }`}>Aujourd&apos;hui</button>
+              }`}>Auj.</button>
             <button onClick={() => setLundi(semaineSuivante(lundi))}
-              className="px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">→</button>
-            <span className="ml-2 text-sm font-semibold text-gray-700">
-              {semaine[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
-              {' – '}
-              {semaine[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              className="px-2.5 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">→</button>
+            <span className="ml-1 text-xs sm:text-sm font-semibold text-gray-700 truncate">
+              <span className="hidden sm:inline">
+                {semaine[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
+                {' – '}
+                {semaine[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
+              <span className="sm:hidden">
+                {semaine[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                {' – '}
+                {semaine[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+              </span>
             </span>
           </div>
 
-          <div className="flex items-center bg-gray-100 rounded p-0.5 gap-0.5">
+          <div className="flex items-center bg-gray-100 rounded p-0.5 gap-0.5 flex-shrink-0">
             <button onClick={() => setVue('grille')}
-              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                 vue === 'grille' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}>⊞ Grille</button>
             <button onClick={() => setVue('liste')}
-              className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+              className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                 vue === 'liste' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'
               }`}>☰ Liste</button>
           </div>
