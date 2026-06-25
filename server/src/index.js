@@ -1,41 +1,53 @@
 const express = require('express');
-const cors = require('cors');
-const path = require('path');
+const cors    = require('cors');
+const path    = require('path');
 
 require('./db/database');
 
+const { requireAuth }   = require('./middleware/auth');
+const { router: authRouter } = require('./routes/auth');
 const healthRouter    = require('./routes/health');
 const coachesRouter   = require('./routes/coaches');
 const coursRouter     = require('./routes/coursTypes');
 const seancesRouter   = require('./routes/seances');
 const pointeursRouter = require('./routes/pointeurs');
 const dashboardRouter = require('./routes/dashboard');
+const appUsersRouter  = require('./routes/appUsers');
+const tasksRouter     = require('./routes/tasks');
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 3001;
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:3001',
+];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: (origin, cb) => cb(null, true),
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
-  allowedHeaders: ['Content-Type'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
 app.use(express.json());
-app.use((req, res, next) => {
-  console.log(`→ ${req.method} ${req.url}`);
-  next();
-});
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-app.use('/api/health',      healthRouter);
-app.use('/api/coaches',     coachesRouter);
-app.use('/api/cours-types', coursRouter);
-app.use('/api/seances',     seancesRouter);
-app.use('/api/pointeurs',   pointeursRouter);
-app.use('/api/dashboard',  dashboardRouter);
+// Routes publiques
+app.use('/api/health', healthRouter);
+app.use('/api/auth',   authRouter);
 
-// Servir le front en production
+// Routes protégées
+app.use('/api/coaches',     requireAuth, coachesRouter);
+app.use('/api/cours-types', requireAuth, coursRouter);
+app.use('/api/seances',     requireAuth, seancesRouter);
+app.use('/api/pointeurs',   requireAuth, pointeursRouter);
+app.use('/api/dashboard',   requireAuth, dashboardRouter);
+app.use('/api/app-users',   appUsersRouter);
+app.use('/api/tasks',       requireAuth, tasksRouter);
+
+// Servir le front
 const clientDist = path.join(__dirname, '../public');
 app.use(express.static(clientDist));
 app.get(/^(?!\/api).*/, (req, res) => {
@@ -53,7 +65,6 @@ function startServer(retry = 0) {
   });
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE' && retry < 3) {
-      console.log(`⚠️  Port ${PORT} occupé — libération...`);
       const { execSync } = require('child_process');
       try {
         execSync(
@@ -63,7 +74,6 @@ function startServer(retry = 0) {
       } catch (_) {}
       setTimeout(() => startServer(retry + 1), 800);
     } else {
-      console.error(err.message);
       process.exit(1);
     }
   });

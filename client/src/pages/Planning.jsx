@@ -7,6 +7,7 @@ import {
 import SeanceCard from '../components/SeanceCard';
 import SeanceModal from '../components/SeanceModal';
 import MiniCalendar from '../components/MiniCalendar';
+import TaskWidget from '../components/TaskWidget';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -304,10 +305,14 @@ export default function Planning() {
         <MiniCalendar lundi={lundi} onSelectDate={(d) => setLundi(getLundi(d))} />
 
         <div className="mt-3 bg-white border border-gray-200 rounded px-3 py-2 text-xs space-y-1.5">
-          <div className="font-semibold text-gray-600 text-[11px] uppercase tracking-wide mb-1">Cette semaine</div>
+          <div className="font-semibold text-gray-600 text-[11px] uppercase tracking-wide mb-1">Séances</div>
           <div className="flex justify-between text-gray-600"><span>Total</span><span className="font-bold">{total}</span></div>
           <div className="flex justify-between text-green-700"><span>Effectués</span><span className="font-bold">{effectues}</span></div>
           {annules > 0 && <div className="flex justify-between text-red-600"><span>Annulés</span><span className="font-bold">{annules}</span></div>}
+        </div>
+
+        <div className="mt-3">
+          <TaskWidget lundi={lundi} />
         </div>
       </aside>
 

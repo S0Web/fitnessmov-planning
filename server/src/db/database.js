@@ -126,6 +126,54 @@ tryAlter('ALTER TABLE coaches ADD COLUMN nom TEXT NOT NULL DEFAULT \'\'');
   }
 })();
 
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS app_users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    prenom        TEXT NOT NULL,
+    nom           TEXT NOT NULL,
+    email         TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role          TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','manager')),
+    actif         INTEGER NOT NULL DEFAULT 1,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    token      TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS tasks (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+    created_by  INTEGER NOT NULL REFERENCES app_users(id),
+    semaine     TEXT NOT NULL,
+    titre       TEXT NOT NULL,
+    done        INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS audit_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id     INTEGER REFERENCES app_users(id),
+    action      TEXT NOT NULL,
+    entity      TEXT,
+    entity_id   INTEGER,
+    details     TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
 db.run(`
   CREATE TABLE IF NOT EXISTS modifications_ponctuelles (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
