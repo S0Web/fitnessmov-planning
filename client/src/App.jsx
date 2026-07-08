@@ -1,8 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
-import Login from './pages/Login';
+import ProfilePicker from './pages/ProfilePicker';
 import Planning from './pages/Planning';
+import PlanningPersonnel from './pages/PlanningPersonnel';
 import Coaches from './pages/Coaches';
 import Settings from './pages/Settings';
 
@@ -17,10 +18,11 @@ function ProtectedRoutes() {
   return (
     <Layout>
       <Routes>
-        <Route path="/"           element={<Planning />} />
-        <Route path="/coaches"    element={<Coaches />} />
-        <Route path="/parametres" element={<Settings />} />
-        <Route path="*"           element={<Navigate to="/" replace />} />
+        <Route path="/"                   element={<Planning />} />
+        <Route path="/planning-personnel" element={<PlanningPersonnel />} />
+        <Route path="/coaches"            element={<Coaches />} />
+        <Route path="/parametres"         element={<Settings />} />
+        <Route path="*"                   element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
   );
@@ -31,7 +33,7 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginRoute />} />
+          <Route path="/login" element={<ProfilePickerRoute />} />
           <Route path="/*"     element={<ProtectedRoutes />} />
         </Routes>
       </BrowserRouter>
@@ -39,8 +41,8 @@ export default function App() {
   );
 }
 
-function LoginRoute() {
+function ProfilePickerRoute() {
   const { user } = useAuth();
   if (user) return <Navigate to="/" replace />;
-  return <Login />;
+  return <ProfilePicker />;
 }

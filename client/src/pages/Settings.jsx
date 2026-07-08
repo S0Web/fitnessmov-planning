@@ -8,7 +8,6 @@ function UserModal({ user, onSave, onClose }) {
     prenom:   user?.prenom   || '',
     nom:      user?.nom      || '',
     email:    user?.email    || '',
-    password: '',
     role:     user?.role     || 'user',
     actif:    user?.actif    !== undefined ? user.actif : 1,
   });
@@ -20,9 +19,7 @@ function UserModal({ user, onSave, onClose }) {
     setSaving(true);
     setError(null);
     try {
-      const payload = { ...form };
-      if (!payload.password) delete payload.password;
-      await onSave(payload);
+      await onSave(form);
       onClose();
     } catch(err) { setError(err.message); }
     finally { setSaving(false); }
@@ -51,11 +48,6 @@ function UserModal({ user, onSave, onClose }) {
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
             <input type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">{isNew ? 'Mot de passe *' : 'Nouveau mot de passe (laisser vide = inchangé)'}</label>
-            <input type="password" required={isNew} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
           </div>
           <div className="flex gap-4">
@@ -114,7 +106,7 @@ export default function Settings() {
 
   const TABS = [
     { id: 'profil', label: 'Mon profil' },
-    ...(isManager ? [{ id: 'users', label: 'Utilisateurs' }, { id: 'audit', label: 'Journal' }] : []),
+    ...(isManager ? [{ id: 'users', label: 'Utilisateurs' }, { id: 'audit', label: 'Historique' }] : []),
   ];
 
   return (
@@ -194,7 +186,7 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Journal */}
+      {/* Historique */}
       {tab === 'audit' && isManager && (
         <div>
           <table className="w-full border-collapse text-xs">

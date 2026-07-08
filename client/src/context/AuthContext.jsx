@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { api } from '../lib/api';
 
 const AuthContext = createContext(null);
 
@@ -9,7 +10,7 @@ export function AuthProvider({ children }) {
   const [token, setToken]     = useState(() => localStorage.getItem(TOKEN_KEY));
   const [loading, setLoading] = useState(true);
 
-  const logout = useCallback(() => {
+  const switchProfile = useCallback(() => {
     if (token) {
       fetch('/api/auth/logout', {
         method: 'POST',
@@ -26,7 +27,7 @@ export function AuthProvider({ children }) {
     fetch('/api/auth/me', { headers: { Authorization: `Bearer ${token}` } })
       .then(r => { if (!r.ok) throw new Error(); return r.json(); })
       .then(u => { setUser(u); setLoading(false); })
-      .catch(() => { logout(); setLoading(false); });
+      .catch(() => { switchProfile(); setLoading(false); });
   }, [token]);
 
   function login(newToken, newUser) {
@@ -35,8 +36,13 @@ export function AuthProvider({ children }) {
     setUser(newUser);
   }
 
+  async function selectProfile(userId) {
+    const res = await api.selectProfile(userId);
+    login(res.token, res.user);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, token, login, selectProfile, switchProfile, loading }}>
       {children}
     </AuthContext.Provider>
   );

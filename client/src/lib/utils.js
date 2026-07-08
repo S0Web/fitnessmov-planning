@@ -12,6 +12,12 @@ export const CATEGORIE_CONFIG = {
   fitness: { bg: 'bg-fitness-light', border: 'border-fitness', dot: 'bg-fitness', hdr: '#c9a464', cell: '#fdf6ec' },
 };
 
+// Palette déterministe pour les bulles de profil (façon PlayStation)
+const BUBBLE_PALETTE = ['#2fa8cc', '#c9a464', '#8b5cf6', '#ef4444', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+export function colorForUser(id) {
+  return BUBBLE_PALETTE[id % BUBBLE_PALETTE.length];
+}
+
 // Retourne le lundi de la semaine contenant `date`
 export function getLundi(date = new Date()) {
   const d = new Date(date);

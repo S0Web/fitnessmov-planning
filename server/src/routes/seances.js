@@ -128,17 +128,24 @@ router.patch('/:id', (req, res) => {
     const existing = db.get('SELECT id FROM seances WHERE id = ?', [req.params.id]);
     if (!existing) return res.status(404).json({ error: 'Séance introuvable' });
 
+    const body = { ...req.body };
+    // Renseigner l'effectif passe automatiquement le statut à "Effectué",
+    // sauf si l'appelant envoie explicitement un statut (ex: le formulaire complet).
+    if (body.nb_presents !== undefined && body.statut === undefined) {
+      body.statut = 'effectue';
+    }
+
     const allowed = ['statut', 'nb_presents', 'pointeur_id', 'notes', 'coach_id',
                      'cours_type_id', 'horaire', 'duree_minutes', 'date'];
     const updates = [];
     const values  = [];
 
     for (const key of allowed) {
-      if (req.body[key] !== undefined) {
+      if (body[key] !== undefined) {
         updates.push(`${key} = ?`);
         // coach_id et pointeur_id : 0 ou '' deviennent NULL
         const nullables = ['coach_id', 'pointeur_id', 'nb_presents'];
-        const v = req.body[key];
+        const v = body[key];
         values.push(nullables.includes(key) && (v === '' || v === 0) ? null : v);
       }
     }
@@ -146,6 +153,13 @@ router.patch('/:id', (req, res) => {
 
     values.push(req.params.id);
     db.run(`UPDATE seances SET ${updates.join(', ')} WHERE id = ?`, values);
+
+    if (req.user) {
+      const detail = allowed.filter(k => body[k] !== undefined).map(k => `${k}=${body[k]}`).join(', ');
+      db.run('INSERT INTO audit_log (user_id, action, entity, entity_id, details) VALUES (?, ?, ?, ?, ?)',
+        [req.user.id, 'update_seance', 'seances', req.params.id, detail]);
+    }
+
     res.json(db.get(`${SEANCE_SELECT} WHERE s.id = ?`, [req.params.id]));
   } catch (e) {
     console.error('PATCH seance error:', e.message);

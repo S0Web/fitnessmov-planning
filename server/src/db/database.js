@@ -134,12 +134,42 @@ db.run(`
     prenom        TEXT NOT NULL,
     nom           TEXT NOT NULL,
     email         TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
     role          TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','manager')),
     actif         INTEGER NOT NULL DEFAULT 1,
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `);
+
+// Migration : supprimer password_hash (fini les comptes par mot de passe, place aux profils)
+;(function migrateDropPasswordHash() {
+  try {
+    const cols = db.all('PRAGMA table_info(app_users)');
+    if (!cols.some(c => c.name === 'password_hash')) return; // déjà migré
+    console.log('⚙️  Migration: suppression de app_users.password_hash...');
+    db.run('PRAGMA foreign_keys = OFF');
+    db.run('BEGIN');
+    db.run(`CREATE TABLE app_users_mig (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      prenom        TEXT NOT NULL,
+      nom           TEXT NOT NULL,
+      email         TEXT NOT NULL UNIQUE,
+      role          TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','manager')),
+      actif         INTEGER NOT NULL DEFAULT 1,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    db.run(`INSERT INTO app_users_mig (id, prenom, nom, email, role, actif, created_at)
+            SELECT id, prenom, nom, email, role, actif, created_at FROM app_users`);
+    db.run('DROP TABLE app_users');
+    db.run('ALTER TABLE app_users_mig RENAME TO app_users');
+    db.run('COMMIT');
+    db.run('PRAGMA foreign_keys = ON');
+    console.log('✅ Migration password_hash OK');
+  } catch (e) {
+    try { db.run('ROLLBACK'); } catch (_) {}
+    db.run('PRAGMA foreign_keys = ON');
+    console.error('Migration error:', e.message);
+  }
+})();
 
 db.run(`
   CREATE TABLE IF NOT EXISTS sessions (
@@ -171,6 +201,43 @@ db.run(`
     entity_id   INTEGER,
     details     TEXT,
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
+// ─── Planning personnel (employés de la salle, distinct des coachs) ──────────
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS employes (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    prenom      TEXT NOT NULL,
+    nom         TEXT NOT NULL DEFAULT '',
+    actif       INTEGER NOT NULL DEFAULT 1,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS personnel_creneaux (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    employe_id  INTEGER NOT NULL REFERENCES employes(id) ON DELETE CASCADE,
+    date        TEXT NOT NULL,
+    type        TEXT NOT NULL DEFAULT 'travail'
+                CHECK(type IN ('travail','cp','ecole','ferie','arret','absent','repos')),
+    debut       TEXT,
+    fin         TEXT,
+    ordre       INTEGER NOT NULL DEFAULT 0,
+    notes       TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+db.run('CREATE INDEX IF NOT EXISTS idx_personnel_creneaux_emp_date ON personnel_creneaux(employe_id, date)');
+
+db.run(`
+  CREATE TABLE IF NOT EXISTS personnel_semaine_meta (
+    employe_id    INTEGER NOT NULL REFERENCES employes(id) ON DELETE CASCADE,
+    semaine       TEXT NOT NULL,
+    code_couleur  TEXT CHECK(code_couleur IN ('ouverture','milieu','fermeture') OR code_couleur IS NULL),
+    PRIMARY KEY (employe_id, semaine)
   )
 `);
 

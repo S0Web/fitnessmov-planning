@@ -22,7 +22,8 @@ async function req(path, options = {}) {
 
 export const api = {
   // Auth
-  login:    (email, password) => req('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  getProfiles:    () => req('/auth/profiles'),
+  selectProfile:  (userId) => req('/auth/select', { method: 'POST', body: JSON.stringify({ user_id: userId }) }),
   logout:   () => req('/auth/logout', { method: 'POST' }),
   me:       () => req('/auth/me'),
   initApp:  (data) => req('/auth/init', { method: 'POST', body: JSON.stringify(data) }),
@@ -62,4 +63,15 @@ export const api = {
   deleteSeance:    (id) => req(`/seances/${id}`, { method: 'DELETE' }),
   dupliquerSemaine: (semaine_source, semaine_cible) =>
     req('/seances/dupliquer', { method: 'POST', body: JSON.stringify({ semaine_source, semaine_cible }) }),
+
+  // Employés (planning personnel)
+  getEmployes:    (tous = false) => req(`/employes${tous ? '?tous=1' : ''}`),
+  createEmploye:  (data) => req('/employes', { method: 'POST', body: JSON.stringify(data) }),
+  updateEmploye:  (id, data) => req(`/employes/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteEmploye:  (id) => req(`/employes/${id}`, { method: 'DELETE' }),
+
+  // Créneaux personnel
+  getPersonnelCreneaux:   (semaine) => req(`/personnel-creneaux?semaine=${semaine}`),
+  upsertPersonnelCreneau: (employeId, date, data) =>
+    req(`/personnel-creneaux/${employeId}/${date}`, { method: 'PUT', body: JSON.stringify(data) }),
 };

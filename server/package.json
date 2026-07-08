@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "seed": "node src/db/seed.js"
+    "seed": "node src/db/seed.js",
+    "seed:personnel": "node src/db/seedPersonnel.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

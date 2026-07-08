@@ -1,6 +1,6 @@
 import { STATUT_CONFIG } from '../lib/utils';
-
-const STATUT_CYCLE = ['programme', 'effectue', 'annule', 'paye'];
+import { nextStatut } from '../lib/statutCycle';
+import HeadcountPopover from './HeadcountPopover';
 
 function parseMinutes(horaire) {
   if (!horaire) return 0;
@@ -32,9 +32,7 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
 
   function cycleStatut(e) {
     e.stopPropagation();
-    const idx  = STATUT_CYCLE.indexOf(seance.statut);
-    const next = STATUT_CYCLE[(idx + 1) % STATUT_CYCLE.length];
-    onPatch(seance.id, { statut: next });
+    onPatch(seance.id, { statut: nextStatut(seance.statut) });
   }
 
   const borderLeft = sansCoach
@@ -86,11 +84,9 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
           {statut.label}
         </button>
 
-        {seance.nb_presents != null && (
-          <span className="text-[11px] text-gray-400 font-medium">
-            {seance.nb_presents} pers.
-          </span>
-        )}
+        <HeadcountPopover value={seance.nb_presents} onSelect={(n) => onPatch(seance.id, { nb_presents: n })}>
+          {seance.nb_presents != null ? `${seance.nb_presents} pers.` : '+ effectif'}
+        </HeadcountPopover>
       </div>
 
       {/* Supprimer (hover) */}

@@ -1,9 +1,7 @@
 const express = require('express');
-const crypto  = require('crypto');
 const router  = express.Router();
 const db      = require('../db/database');
 const { requireAuth, requireManager } = require('../middleware/auth');
-const { hashPassword } = require('./auth');
 
 // GET /api/app-users — liste (manager seulement)
 router.get('/', requireManager, (req, res) => {
@@ -11,15 +9,14 @@ router.get('/', requireManager, (req, res) => {
   res.json(users);
 });
 
-// POST /api/app-users — créer un utilisateur (manager)
+// POST /api/app-users — créer un profil (manager)
 router.post('/', requireManager, (req, res) => {
-  const { prenom, nom, email, password, role } = req.body;
-  if (!prenom || !nom || !email || !password) return res.status(400).json({ error: 'Tous les champs sont requis' });
+  const { prenom, nom, email, role } = req.body;
+  if (!prenom || !nom || !email) return res.status(400).json({ error: 'Tous les champs sont requis' });
   try {
-    const hash = hashPassword(password);
     const result = db.run(
-      'INSERT INTO app_users (prenom, nom, email, password_hash, role) VALUES (?, ?, ?, ?, ?)',
-      [prenom.trim(), nom.trim(), email.trim().toLowerCase(), hash, role === 'manager' ? 'manager' : 'user']
+      'INSERT INTO app_users (prenom, nom, email, role) VALUES (?, ?, ?, ?)',
+      [prenom.trim(), nom.trim(), email.trim().toLowerCase(), role === 'manager' ? 'manager' : 'user']
     );
     const user = db.get('SELECT id, prenom, nom, email, role, actif FROM app_users WHERE id = ?', [result.lastInsertRowid]);
     db.run('INSERT INTO audit_log (user_id, action, entity, entity_id, details) VALUES (?, ?, ?, ?, ?)',
@@ -37,21 +34,20 @@ router.put('/:id', requireAuth, (req, res) => {
   const isSelf    = req.user.id === Number(req.params.id);
   if (!isManager && !isSelf) return res.status(403).json({ error: 'Accès refusé' });
 
-  const { prenom, nom, email, password, role, actif } = req.body;
+  const { prenom, nom, email, role, actif } = req.body;
   const user = db.get('SELECT * FROM app_users WHERE id = ?', [req.params.id]);
   if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
 
-  const newHash = password ? hashPassword(password) : user.password_hash;
   const newRole = isManager && role ? (role === 'manager' ? 'manager' : 'user') : user.role;
   const newActif = isManager && actif !== undefined ? (actif ? 1 : 0) : user.actif;
 
   db.run(
-    'UPDATE app_users SET prenom=?, nom=?, email=?, password_hash=?, role=?, actif=? WHERE id=?',
+    'UPDATE app_users SET prenom=?, nom=?, email=?, role=?, actif=? WHERE id=?',
     [
       (prenom || user.prenom).trim(),
       (nom || user.nom).trim(),
       (email || user.email).trim().toLowerCase(),
-      newHash, newRole, newActif,
+      newRole, newActif,
       req.params.id
     ]
   );
@@ -59,7 +55,7 @@ router.put('/:id', requireAuth, (req, res) => {
   res.json(db.get('SELECT id, prenom, nom, email, role, actif FROM app_users WHERE id = ?', [req.params.id]));
 });
 
-// GET /api/app-users/audit — journal (manager)
+// GET /api/app-users/audit — historique (manager)
 router.get('/audit', requireManager, (req, res) => {
   const logs = db.all(`
     SELECT a.*, u.prenom || ' ' || u.nom AS user_nom

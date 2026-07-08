@@ -8,6 +8,8 @@ import SeanceCard from '../components/SeanceCard';
 import SeanceModal from '../components/SeanceModal';
 import MiniCalendar from '../components/MiniCalendar';
 import TaskWidget from '../components/TaskWidget';
+import HeadcountPopover from '../components/HeadcountPopover';
+import { nextStatut } from '../lib/statutCycle';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -195,9 +197,7 @@ function VueListe({ seances, loading, onOpenCard, onPatch, onDelete }) {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const cycle = ['programme', 'effectue', 'annule', 'paye'];
-                          const next = cycle[(cycle.indexOf(s.statut) + 1) % cycle.length];
-                          onPatch(s.id, { statut: next });
+                          onPatch(s.id, { statut: nextStatut(s.statut) });
                         }}
                         className={`text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wide hover:opacity-80 ${statut.bg} ${statut.text}`}
                       >
@@ -205,7 +205,9 @@ function VueListe({ seances, loading, onOpenCard, onPatch, onDelete }) {
                       </button>
                     </td>
                     <td className="px-3 py-1.5 border-b border-gray-100 text-center text-xs text-gray-500">
-                      {s.nb_presents ?? '—'}
+                      <HeadcountPopover value={s.nb_presents} onSelect={(n) => onPatch(s.id, { nb_presents: n })}>
+                        {s.nb_presents ?? '—'}
+                      </HeadcountPopover>
                     </td>
                     <td className="px-3 py-1.5 border-b border-gray-100 text-xs text-gray-500">
                       {s.pointeur_nom ?? '—'}
