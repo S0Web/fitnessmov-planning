@@ -15,6 +15,7 @@ const dashboardRouter = require('./routes/dashboard');
 const appUsersRouter  = require('./routes/appUsers');
 const tasksRouter     = require('./routes/tasks');
 const personnelCreneauxRouter = require('./routes/personnelCreneaux');
+const adminRouter     = require('./routes/admin');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -48,6 +49,7 @@ app.use('/api/dashboard',   requireAuth, dashboardRouter);
 app.use('/api/app-users',   appUsersRouter);
 app.use('/api/tasks',       requireAuth, tasksRouter);
 app.use('/api/personnel-creneaux',  requireAuth, personnelCreneauxRouter);
+app.use('/api/admin', adminRouter);
 
 // Servir le front
 const clientDist = path.join(__dirname, '../public');

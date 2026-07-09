@@ -8,12 +8,12 @@ import MiniCalendar from '../components/MiniCalendar';
 import PersonnelCreneauModal from '../components/PersonnelCreneauModal';
 
 const TYPE_CONFIG = {
-  cp:     { label: 'CP',     bg: 'bg-amber-100',   text: 'text-amber-700' },
-  ecole:  { label: 'École',  bg: 'bg-emerald-100', text: 'text-emerald-700' },
-  ferie:  { label: 'Férié',  bg: 'bg-purple-100',  text: 'text-purple-700' },
-  arret:  { label: 'Arrêt',  bg: 'bg-red-100',     text: 'text-red-700' },
-  absent: { label: 'Absent', bg: 'bg-red-200',     text: 'text-red-800' },
-  repos:  { label: 'Repos',  bg: 'bg-gray-100',    text: 'text-gray-500' },
+  cp:     { label: 'CP',     bg: '#fde68a', text: '#78350f' },
+  ecole:  { label: 'École',  bg: '#a7f3d0', text: '#065f46' },
+  ferie:  { label: 'Férié',  bg: '#e9d5ff', text: '#581c87' },
+  arret:  { label: 'Arrêt',  bg: '#fecaca', text: '#7f1d1d' },
+  absent: { label: 'Absent', bg: '#fca5a5', text: '#7f1d1d' },
+  repos:  { label: 'Repos',  bg: '#e5e7eb', text: '#4b5563' },
 };
 
 function fmtTime(hhmm) {
@@ -121,22 +121,27 @@ export default function PlanningPersonnel() {
                       .sort((a, b) => a.ordre - b.ordre);
                     const isAbsence = cellCreneaux.length > 0 && cellCreneaux[0].type !== 'travail';
 
+                    const typeCfg = isAbsence ? TYPE_CONFIG[cellCreneaux[0].type] : null;
+
                     return (
                       <td key={iso} onClick={() => setCellModal({ employe: emp, date: iso })}
-                        className="border border-gray-200 align-top p-1 min-w-[100px] h-14 cursor-pointer hover:bg-sky-50 transition-colors">
-                        {cellCreneaux.length === 0 && (
-                          <div className="h-full flex items-center justify-center text-gray-300 text-lg">+</div>
-                        )}
-                        {isAbsence && (
-                          <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${TYPE_CONFIG[cellCreneaux[0].type]?.bg} ${TYPE_CONFIG[cellCreneaux[0].type]?.text}`}>
-                            {TYPE_CONFIG[cellCreneaux[0].type]?.label}
-                          </span>
-                        )}
-                        {!isAbsence && cellCreneaux.map(c => (
-                          <div key={c.id} className="text-[11px] text-gray-700 tabular-nums leading-tight">
-                            {fmtTime(c.debut)}–{fmtTime(c.fin)}
-                          </div>
-                        ))}
+                        style={typeCfg ? { backgroundColor: typeCfg.bg } : undefined}
+                        className={`border border-gray-200 p-0 min-w-[100px] h-16 cursor-pointer transition-colors ${typeCfg ? '' : 'hover:bg-sky-50'}`}>
+                        <div className="h-full w-full flex flex-col items-center justify-center gap-0.5 px-1">
+                          {cellCreneaux.length === 0 && (
+                            <span className="text-gray-300 text-lg leading-none">+</span>
+                          )}
+                          {typeCfg && (
+                            <span className="text-xs font-bold uppercase tracking-wide" style={{ color: typeCfg.text }}>
+                              {typeCfg.label}
+                            </span>
+                          )}
+                          {!isAbsence && cellCreneaux.map(c => (
+                            <div key={c.id} className="text-sm font-semibold text-gray-700 tabular-nums text-center leading-tight">
+                              {fmtTime(c.debut)}–{fmtTime(c.fin)}
+                            </div>
+                          ))}
+                        </div>
                       </td>
                     );
                   })}

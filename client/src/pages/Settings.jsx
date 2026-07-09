@@ -104,6 +104,22 @@ export default function Settings() {
     api.getAppUsers().then(setUsers);
   }
 
+  const [seeding, setSeeding] = useState(false);
+  const [seedResult, setSeedResult] = useState(null);
+
+  async function handleSeedPersonnel() {
+    setSeeding(true);
+    setSeedResult(null);
+    try {
+      const res = await api.seedPersonnelHistorique();
+      setSeedResult({ ok: true, message: `${res.jours} jour(s) importé(s), ${res.ignores} déjà renseigné(s) ignoré(s).` });
+    } catch (err) {
+      setSeedResult({ ok: false, message: err.message });
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   const TABS = [
     { id: 'profil', label: 'Mon profil' },
     ...(isManager ? [{ id: 'users', label: 'Utilisateurs' }, { id: 'audit', label: 'Historique' }] : []),
@@ -149,14 +165,25 @@ export default function Settings() {
       {/* Utilisateurs */}
       {tab === 'users' && isManager && (
         <div>
-          <div className="flex justify-between items-center mb-3">
+          <div className="flex justify-between items-center mb-3 gap-3">
             <span className="text-sm text-gray-500">{users.length} utilisateur(s)</span>
-            <button onClick={() => setModal({})}
-              className="text-white px-4 py-2 rounded text-sm font-medium"
-              style={{ backgroundColor: '#2fa8cc' }}>
-              + Nouveau
-            </button>
+            <div className="flex items-center gap-3">
+              <button onClick={handleSeedPersonnel} disabled={seeding}
+                className="text-xs px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50">
+                {seeding ? 'Import…' : 'Importer l’historique du planning personnel'}
+              </button>
+              <button onClick={() => setModal({})}
+                className="text-white px-4 py-2 rounded text-sm font-medium"
+                style={{ backgroundColor: '#2fa8cc' }}>
+                + Nouveau
+              </button>
+            </div>
           </div>
+          {seedResult && (
+            <div className={`mb-3 text-sm rounded px-3 py-2 ${seedResult.ok ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+              {seedResult.message}
+            </div>
+          )}
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>

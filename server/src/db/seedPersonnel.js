@@ -37,18 +37,34 @@ function ensureEmploye(prenom) {
   return result.lastInsertRowid;
 }
 
-let jours = 0;
-for (const week of weeks) {
-  for (const [prenom, jourValues] of Object.entries(week.employes)) {
-    const employeId = ensureEmploye(prenom);
-    jourValues.forEach((raw, i) => {
-      const parsed = parseCell(raw);
-      if (!parsed) return;
-      const date = addDays(week.lundi, i);
-      upsertJour(employeId, date, parsed);
-      jours++;
-    });
+// Importe l'historique transcrit du PDF. N'écrase jamais un jour déjà renseigné
+// (manuellement ou par un import précédent) — ne comble que les jours vides.
+function run() {
+  let jours = 0;
+  let ignores = 0;
+  for (const week of weeks) {
+    for (const [prenom, jourValues] of Object.entries(week.employes)) {
+      const employeId = ensureEmploye(prenom);
+      jourValues.forEach((raw, i) => {
+        const parsed = parseCell(raw);
+        if (!parsed) return;
+        const date = addDays(week.lundi, i);
+        const existing = db.get(
+          'SELECT 1 FROM personnel_creneaux WHERE employe_id = ? AND date = ?',
+          [employeId, date]
+        );
+        if (existing) { ignores++; return; }
+        upsertJour(employeId, date, parsed);
+        jours++;
+      });
+    }
   }
+  return { jours, ignores, semaines: weeks.length };
 }
 
-console.log(`✅ Import planning personnel : ${jours} jours insérés sur ${weeks.length} semaines`);
+module.exports = { run };
+
+if (require.main === module) {
+  const result = run();
+  console.log(`✅ Import planning personnel : ${result.jours} jours insérés, ${result.ignores} déjà renseignés ignorés (sur ${result.semaines} semaines)`);
+}

@@ -85,22 +85,6 @@ export default function PersonnelCreneauModal({ employe, date, creneaux, onSave,
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-4">
           {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">{error}</div>}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-            <div className="flex gap-1.5 flex-wrap">
-              {TYPES.map(t => (
-                <button
-                  key={t.id} type="button"
-                  onClick={() => setType(t.id)}
-                  className={`px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wide transition-all
-                    ${type === t.id ? 'bg-sky-600 text-white ring-2 ring-offset-1 ring-sky-400' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {type === 'travail' && (
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">Horaires (coupures possibles)</label>
@@ -131,6 +115,22 @@ export default function PersonnelCreneauModal({ employe, date, creneaux, onSave,
               )}
             </div>
           )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
+            <div className="flex gap-1.5 flex-wrap">
+              {TYPES.map(t => (
+                <button
+                  key={t.id} type="button"
+                  onClick={() => setType(t.id)}
+                  className={`px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wide transition-all
+                    ${type === t.id ? 'bg-sky-600 text-white ring-2 ring-offset-1 ring-sky-400' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>

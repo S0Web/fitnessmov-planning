@@ -68,4 +68,7 @@ export const api = {
   getPersonnelCreneaux:   (semaine) => req(`/personnel-creneaux?semaine=${semaine}`),
   upsertPersonnelCreneau: (employeId, date, data) =>
     req(`/personnel-creneaux/${employeId}/${date}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  // Admin
+  seedPersonnelHistorique: () => req('/admin/seed-personnel', { method: 'POST' }),
 };
