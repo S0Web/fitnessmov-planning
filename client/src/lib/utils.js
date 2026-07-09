@@ -63,3 +63,11 @@ export function semainePrecedente(lundi) {
   d.setDate(d.getDate() - 7);
   return d;
 }
+
+// Le serveur stocke les created_at en UTC via SQLite datetime('now'), au format
+// "YYYY-MM-DD HH:MM:SS" sans indicateur de fuseau. Sans le 'Z', le navigateur
+// interprète ce format comme une heure déjà locale (pas d'UTC → local) et
+// affiche l'heure décalée (ex. 2h de retard en été). On force l'UTC explicitement.
+export function parseServerDate(s) {
+  return new Date(s.replace(' ', 'T') + 'Z');
+}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { parseServerDate } from '../lib/utils';
 
 function UserModal({ user, onSave, onClose }) {
   const isNew = !user?.id;
@@ -208,7 +209,7 @@ export default function Settings() {
               {audit.map((a, i) => (
                 <tr key={a.id} style={{ backgroundColor: i % 2 === 0 ? '#f9fafb' : '#fff' }}>
                   <td className="px-3 py-2 text-gray-500 whitespace-nowrap">
-                    {new Date(a.created_at).toLocaleString('fr-FR')}
+                    {parseServerDate(a.created_at).toLocaleString('fr-FR')}
                   </td>
                   <td className="px-3 py-2 font-medium">{a.user_nom || '—'}</td>
                   <td className="px-3 py-2">{a.action}</td>
