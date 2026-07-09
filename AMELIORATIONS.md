@@ -41,28 +41,33 @@ séances utilisent aussi l'heure locale du serveur.
 le code, qui reste modifiable via une vraie variable d'env si besoin. Vérifié : une session créée le
 9/7/2026 expire bien à `2026-07-10T06:00:00` heure de Paris (`04:00:00Z`).
 
-### 3. Session expirée : l'app reste affichée et toutes les actions échouent en silence
+**Bug lié trouvé et corrigé au passage :** l'onglet Historique (`Settings.jsx`) affichait aussi les
+heures avec 2h de retard en été — cause différente (`created_at` stocké en UTC via `datetime('now')`
+de SQLite, sans indicateur de fuseau, mal interprété comme heure locale par le navigateur). Fix :
+`parseServerDate()` dans `client/src/lib/utils.js`, qui force explicitement l'UTC avant conversion.
+
+### 3. ✅ Session expirée : l'app reste affichée et toutes les actions échouent en silence — CORRIGÉ
 **Problème.** Après l'expiration du matin, si l'onglet était resté ouvert, chaque clic provoque une
 erreur "Session expirée" mais l'utilisateur reste sur la page (le `catch` avale souvent l'erreur).
-**Solution.** Dans `client/src/lib/api.js`, fonction `req()` : si `res.status === 401`, faire
-`localStorage.removeItem('fm_token'); window.location.assign('/login');` avant de throw. C'est le
-filet de sécurité global ; pas besoin de toucher chaque page. **Effort S.**
+**Solution appliquée.** Dans `client/src/lib/api.js`, `req()` détecte tout `401` (hors `/auth/select`
+lui-même) : purge `fm_token` et redirige vers `/login`, où l'utilisateur retombe sur le sélecteur de
+profils. Ne touche pas `AuthContext.jsx` (son check initial `/auth/me` passe par `fetch` brut, pas par
+`req()`, donc aucun risque de boucle de redirection au chargement).
 
-### 4. Seed des cours : 19 cours sur 27 silencieusement perdus sur une installation neuve
+### 4. ✅ Seed des cours : 19 cours sur 27 silencieusement perdus sur une installation neuve — CORRIGÉ
 **Problème.** `server/src/db/seed.js` insère des catégories `bike` et `salle`, mais la contrainte
 `CHECK(categorie IN ('aqua','fitness'))` de `cours_types` + `INSERT OR IGNORE` fait que ces lignes
 sont ignorées sans erreur. La prod n'est pas touchée (ses données existaient avant), mais toute
 nouvelle installation n'aura que les 8 cours aqua.
-**Solution.** Dans `seed.js`, remplacer `bike` et `salle` par `fitness` (l'UI ne connaît que
-aqua/fitness : `CATEGORIE_CONFIG` dans `client/src/lib/utils.js`, lignes `ROWS` de `Planning.jsx`).
-**Effort S.**
+**Solution appliquée.** `bike`/`salle` remplacés par `fitness` dans `seed.js`. Vérifié en local :
+« ✅ Seed cours_types — 27 types insérés/ignorés » (contre 8 avant le fix).
 
-### 5. Le "✕" du sélecteur de pointeur SUPPRIME le pointeur de la base
+### 5. ✅ Le "✕" du sélecteur de pointeur SUPPRIMAIT le pointeur de la base — CORRIGÉ
 **Problème.** Dans `SeanceModal.jsx` (`PointeurSelector`), le bouton ✕ à côté du select ressemble à
-"désélectionner" mais appelle `api.deletePointeur(id)` → suppression définitive pour tout le monde.
-**Solution.** Le ✕ ne doit que vider la sélection (`onChange('')`). Pour la vraie suppression, ajouter
-un `confirm()` explicite ("Supprimer définitivement le pointeur X ?") ou déplacer la gestion des
-pointeurs dans Paramètres. **Fichier.** `client/src/components/SeanceModal.jsx`. **Effort S.**
+"désélectionner" mais appelait `api.deletePointeur(id)` → suppression définitive pour tout le monde.
+**Solution appliquée.** Le ✕ ne fait plus que vider la sélection (`onChange('')`). Un second bouton 🗑
+distinct gère la vraie suppression, avec un `confirm()` explicite nommant le pointeur. Vérifié : après
+clic sur ✕, le pointeur reste bien présent en base.
 
 ### 6. Navbar : débordement sur mobile
 **Problème.** `Layout.jsx` : marque + 4 onglets + bulle profil sur une seule ligne h-14 → déborde
@@ -149,10 +154,10 @@ non vide, avec `title={notes}` pour lecture au survol. **Effort S.**
 `HeadcountPopover.jsx` plafonne à 30. Ajouter sous la grille un mini input numérique "Autre : __"
 validé par Entrée. **Effort S.**
 
-### 18. Couleur d'avatar incohérente dans "Mon profil"
-`Settings.jsx` (onglet Mon profil) utilise `#2fa8cc` en dur au lieu de `colorForUser(me.id)`
-(importable depuis `client/src/lib/utils.js`) — la bulle n'a pas la même couleur que dans le header
-et l'écran d'accueil. **Effort S.**
+### 18. ✅ Couleur d'avatar incohérente dans "Mon profil" — CORRIGÉ
+`Settings.jsx` (onglet Mon profil) utilisait `#2fa8cc` en dur au lieu de `colorForUser(me.id)`
+(importable depuis `client/src/lib/utils.js`) — la bulle n'avait pas la même couleur que dans le
+header et l'écran d'accueil. Corrigé et vérifié par capture d'écran (les deux bulles sont identiques).
 
 ### 19. Historique plus lisible
 L'onglet Historique affiche les actions brutes (`switch_profile`, `update_seance`,
