@@ -42,7 +42,7 @@ router.get('/cp-summary', (req, res) => {
       SELECT u.id, u.prenom, u.nom, COUNT(*) as cp
       FROM personnel_creneaux pc
       JOIN app_users u ON u.id = pc.employe_id
-      WHERE pc.type = 'cp'
+      WHERE pc.type = 'cp' AND u.actif = 1
       GROUP BY u.id
       ORDER BY u.prenom
     `);

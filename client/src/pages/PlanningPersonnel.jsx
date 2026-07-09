@@ -3,29 +3,18 @@ import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import {
   getLundi, getSemaine, toISO,
-  semaineSuivante, semainePrecedente,
+  semaineSuivante, semainePrecedente, colorForUser,
 } from '../lib/utils';
 import MiniCalendar from '../components/MiniCalendar';
 import PersonnelCreneauModal from '../components/PersonnelCreneauModal';
 
 const TYPE_CONFIG = {
-  cp:     { label: 'CP',     bg: '#fde68a', text: '#78350f' },
-  ecole:  { label: 'École',  bg: '#a7f3d0', text: '#065f46' },
-  ferie:  { label: 'Férié',  bg: '#e9d5ff', text: '#581c87' },
-  arret:  { label: 'Arrêt',  bg: '#fecaca', text: '#7f1d1d' },
-  repos:  { label: 'Repos',  bg: '#e5e7eb', text: '#4b5563' },
+  cp:     { label: 'CP',     bg: '#fef3c7', text: '#92400e' },
+  ecole:  { label: 'École',  bg: '#d1fae5', text: '#065f46' },
+  ferie:  { label: 'Férié',  bg: '#f3e8ff', text: '#6b21a8' },
+  arret:  { label: 'Arrêt',  bg: '#fee2e2', text: '#991b1b' },
+  repos:  { label: 'Repos',  bg: '#f3f4f6', text: '#6b7280' },
 };
-
-const CODE_COULEUR_CONFIG = {
-  ouverture: { label: 'Ouverture', bg: '#93c5fd', text: '#1e3a8a' },
-  milieu:    { label: 'Milieu',    bg: '#fca5a5', text: '#7f1d1d' },
-  fermeture: { label: 'Fermeture', bg: '#c4b5fd', text: '#4c1d95' },
-};
-
-// Horaires d'ouverture de la salle
-const OUVERTURE_SEMAINE = 7 * 60 + 30, FERMETURE_SEMAINE = 22 * 60;
-const OUVERTURE_WEEKEND = 9 * 60,      FERMETURE_WEEKEND = 18 * 60;
-const TOLERANCE = 15; // minutes
 
 function fmtTime(hhmm) {
   if (!hhmm) return '';
@@ -39,44 +28,10 @@ function toMinutes(hhmm) {
   return h * 60 + m;
 }
 
-function isWeekend(iso) {
-  const day = new Date(iso + 'T00:00:00').getDay();
-  return day === 0 || day === 6;
-}
-
 function fmtHeures(totalMinutes) {
   if (!totalMinutes) return '—';
   const h = totalMinutes / 60;
   return (Number.isInteger(h) ? String(h) : h.toFixed(1).replace('.', ',')) + 'h';
-}
-
-// Détermine si la semaine d'un employé est plutôt Ouverture / Milieu / Fermeture,
-// à partir de ses créneaux travail comparés aux horaires de la salle.
-function computeCodeCouleur(travailCreneaux) {
-  const parDate = {};
-  travailCreneaux.forEach(c => {
-    if (!c.debut || !c.fin) return;
-    (parDate[c.date] ||= []).push(c);
-  });
-
-  let ouverture = 0, fermeture = 0, milieu = 0;
-  for (const [date, segs] of Object.entries(parDate)) {
-    const weekend = isWeekend(date);
-    const debutSalle = weekend ? OUVERTURE_WEEKEND : OUVERTURE_SEMAINE;
-    const finSalle   = weekend ? FERMETURE_WEEKEND : FERMETURE_SEMAINE;
-    const debutMin = Math.min(...segs.map(s => toMinutes(s.debut)));
-    const finMax   = Math.max(...segs.map(s => toMinutes(s.fin)));
-    const faitOuverture = debutMin <= debutSalle + TOLERANCE;
-    const faitFermeture = finMax >= finSalle - TOLERANCE;
-    if (faitOuverture) ouverture++;
-    if (faitFermeture) fermeture++;
-    if (!faitOuverture && !faitFermeture) milieu++;
-  }
-
-  if (ouverture === 0 && fermeture === 0 && milieu === 0) return null;
-  if (ouverture >= fermeture && ouverture >= milieu) return 'ouverture';
-  if (fermeture >= milieu) return 'fermeture';
-  return 'milieu';
 }
 
 function CpSummary({ isManager }) {
@@ -87,21 +42,21 @@ function CpSummary({ isManager }) {
   if (cp.length === 0) return null;
 
   return (
-    <div className="mt-3 bg-white border border-gray-200 rounded px-3 py-2 text-xs">
-      <div className="font-semibold text-gray-600 text-[11px] uppercase tracking-wide mb-1.5">CP pris</div>
+    <div className="mt-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-xs">
+      <div className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide mb-2">CP pris</div>
       {isManager ? (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           {cp.map(c => (
-            <div key={c.id} className="flex justify-between text-gray-600">
+            <div key={c.id} className="flex justify-between items-center text-gray-600">
               <span>{c.prenom}</span>
-              <span className="font-bold">{c.cp}</span>
+              <span className="font-semibold text-gray-700 tabular-nums">{c.cp}</span>
             </div>
           ))}
         </div>
       ) : (
-        <div className="flex justify-between text-gray-600">
+        <div className="flex justify-between items-center text-gray-600">
           <span>Mes CP</span>
-          <span className="font-bold">{cp[0].cp}</span>
+          <span className="font-semibold text-gray-700 tabular-nums">{cp[0].cp}</span>
         </div>
       )}
     </div>
@@ -184,93 +139,97 @@ export default function PlanningPersonnel() {
         ) : rows.length === 0 ? (
           <p className="text-sm text-gray-400 py-10 text-center">Aucun profil — ajoute-en un depuis l'écran d'accueil.</p>
         ) : (
-          <table className="w-full border-collapse table-fixed text-sm">
-            <colgroup>
-              <col style={{ width: '110px' }} />
-              {semaine.map((_, i) => <col key={i} />)}
-              <col style={{ width: '64px' }} />
-              <col style={{ width: '100px' }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th className="sticky top-14 z-20 bg-gray-100 border border-gray-300 p-2 text-left text-xs font-bold text-gray-500 uppercase">Employé</th>
-                {semaine.map((date) => {
-                  const iso = toISO(date);
-                  const isToday = iso === today;
+          <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+            <table className="w-full border-collapse table-fixed text-sm">
+              <colgroup>
+                <col style={{ width: '150px' }} />
+                {semaine.map((_, i) => <col key={i} />)}
+                <col style={{ width: '68px' }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th className="sticky top-14 z-20 bg-gray-50 border-b border-gray-200 p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                    Employé
+                  </th>
+                  {semaine.map((date) => {
+                    const iso = toISO(date);
+                    const isToday = iso === today;
+                    return (
+                      <th key={iso} className={`sticky top-14 z-20 border-b border-gray-200 p-1.5 text-center ${isToday ? 'bg-sky-50' : 'bg-gray-50'}`}>
+                        <div className={`text-[10px] font-semibold uppercase tracking-wide ${isToday ? 'text-sky-500' : 'text-gray-400'}`}>
+                          {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
+                        </div>
+                        <div className={`text-sm font-bold leading-none mt-0.5 ${isToday ? 'text-sky-700' : 'text-gray-600'}`}>
+                          {date.getDate()}
+                        </div>
+                      </th>
+                    );
+                  })}
+                  <th className="sticky top-14 z-20 bg-gray-50 border-b border-gray-200 p-2 text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {rows.map(emp => {
+                  const empCreneaux = creneaux.filter(c => c.employe_id === emp.id);
+                  const travail = empCreneaux.filter(c => c.type === 'travail');
+                  const totalMinutes = travail.reduce((sum, c) => sum + (toMinutes(c.fin) - toMinutes(c.debut)), 0);
+
                   return (
-                    <th key={iso} className={`sticky top-14 z-20 border border-gray-300 p-1.5 text-center ${isToday ? 'bg-sky-600 text-white' : 'bg-gray-100 text-gray-700'}`}>
-                      <div className={`text-[10px] font-bold uppercase tracking-wide ${isToday ? 'text-sky-100' : 'text-gray-400'}`}>
-                        {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
-                      </div>
-                      <div className="text-sm font-bold leading-none">{date.getDate()}</div>
-                    </th>
+                    <tr key={emp.id} className="group/row hover:bg-gray-50/60 transition-colors">
+                      <td className="sticky left-0 z-10 bg-white group-hover/row:bg-gray-50/60 border-r border-gray-100 px-3 py-2 align-middle transition-colors">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className="h-6 w-6 flex-shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                            style={{ backgroundColor: colorForUser(emp.id) }}
+                          >
+                            {emp.prenom?.[0]}{emp.nom?.[0]}
+                          </span>
+                          <span className="font-medium text-gray-700 truncate">{emp.prenom} {emp.nom}</span>
+                        </div>
+                      </td>
+                      {semaine.map(date => {
+                        const iso = toISO(date);
+                        const cellCreneaux = empCreneaux
+                          .filter(c => c.date === iso)
+                          .sort((a, b) => a.ordre - b.ordre);
+                        const isAbsence = cellCreneaux.length > 0 && cellCreneaux[0].type !== 'travail';
+                        const typeCfg = isAbsence ? TYPE_CONFIG[cellCreneaux[0].type] : null;
+
+                        return (
+                          <td key={iso} onClick={() => setCellModal({ employe: emp, date: iso })}
+                            className="group/cell p-1 min-w-[100px] h-14 cursor-pointer align-middle">
+                            <div
+                              className="h-full w-full rounded-lg flex flex-col items-center justify-center gap-1 transition-colors"
+                              style={{ backgroundColor: typeCfg ? typeCfg.bg : 'transparent' }}
+                            >
+                              {cellCreneaux.length === 0 && (
+                                <span className="text-gray-300 text-base leading-none opacity-0 group-hover/cell:opacity-100 transition-opacity">+</span>
+                              )}
+                              {typeCfg && (
+                                <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: typeCfg.text }}>
+                                  {typeCfg.label}
+                                </span>
+                              )}
+                              {!isAbsence && cellCreneaux.map(c => (
+                                <div key={c.id} className="text-[13px] font-semibold text-gray-600 tabular-nums text-center leading-snug">
+                                  {fmtTime(c.debut)} - {fmtTime(c.fin)}
+                                </div>
+                              ))}
+                            </div>
+                          </td>
+                        );
+                      })}
+                      <td className="text-center text-sm font-semibold text-gray-500 tabular-nums">
+                        {fmtHeures(totalMinutes)}
+                      </td>
+                    </tr>
                   );
                 })}
-                <th className="sticky top-14 z-20 bg-gray-100 border border-gray-300 p-2 text-center text-xs font-bold text-gray-500 uppercase">Total</th>
-                <th className="sticky top-14 z-20 bg-gray-100 border border-gray-300 p-2 text-center text-xs font-bold text-gray-500 uppercase">Code couleur</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(emp => {
-                const empCreneaux = creneaux.filter(c => c.employe_id === emp.id);
-                const travail = empCreneaux.filter(c => c.type === 'travail');
-                const totalMinutes = travail.reduce((sum, c) => sum + (toMinutes(c.fin) - toMinutes(c.debut)), 0);
-                const codeCouleur = computeCodeCouleur(travail);
-                const ccCfg = codeCouleur ? CODE_COULEUR_CONFIG[codeCouleur] : null;
-
-                return (
-                  <tr key={emp.id}>
-                    <td className="sticky left-0 z-10 bg-white border border-gray-200 px-2 py-2 font-semibold text-gray-700 align-top">
-                      {emp.prenom} {emp.nom}
-                    </td>
-                    {semaine.map(date => {
-                      const iso = toISO(date);
-                      const cellCreneaux = empCreneaux
-                        .filter(c => c.date === iso)
-                        .sort((a, b) => a.ordre - b.ordre);
-                      const isAbsence = cellCreneaux.length > 0 && cellCreneaux[0].type !== 'travail';
-                      const typeCfg = isAbsence ? TYPE_CONFIG[cellCreneaux[0].type] : null;
-
-                      return (
-                        <td key={iso} onClick={() => setCellModal({ employe: emp, date: iso })}
-                          style={typeCfg ? { backgroundColor: typeCfg.bg } : undefined}
-                          className={`border border-gray-200 p-0 min-w-[100px] h-16 cursor-pointer transition-colors ${typeCfg ? '' : 'hover:bg-sky-50'}`}>
-                          <div className="h-full w-full flex flex-col items-center justify-center gap-1.5 px-1">
-                            {cellCreneaux.length === 0 && (
-                              <span className="text-gray-300 text-lg leading-none">+</span>
-                            )}
-                            {typeCfg && (
-                              <span className="text-xs font-bold uppercase tracking-wide" style={{ color: typeCfg.text }}>
-                                {typeCfg.label}
-                              </span>
-                            )}
-                            {!isAbsence && cellCreneaux.map(c => (
-                              <div key={c.id} className="text-sm font-semibold text-gray-700 tabular-nums text-center leading-tight">
-                                {fmtTime(c.debut)} - {fmtTime(c.fin)}
-                              </div>
-                            ))}
-                          </div>
-                        </td>
-                      );
-                    })}
-                    <td className="border border-gray-200 text-center text-sm font-bold text-gray-700 tabular-nums">
-                      {fmtHeures(totalMinutes)}
-                    </td>
-                    <td className="border border-gray-200 p-0"
-                      style={ccCfg ? { backgroundColor: ccCfg.bg } : undefined}>
-                      {ccCfg && (
-                        <div className="h-full flex items-center justify-center py-2">
-                          <span className="text-xs font-bold uppercase tracking-wide" style={{ color: ccCfg.text }}>
-                            {ccCfg.label}
-                          </span>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
