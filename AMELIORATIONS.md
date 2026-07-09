@@ -32,13 +32,14 @@ Optionnel : n'autoriser la création de profil qu'aux sessions manager une fois 
 **Fichiers.** `server/src/db/database.js`, `server/src/routes/auth.js`, `client/src/pages/ProfilePicker.jsx`,
 `client/src/pages/Settings.jsx` (champ PIN dans UserModal). **Effort M.**
 
-### 2. Fuseau horaire : la déconnexion "6h du matin" est en réalité 8h (été)
+### 2. ✅ Fuseau horaire : la déconnexion "6h du matin" est en réalité 8h (été) — CORRIGÉ
 **Problème.** Le conteneur Railway est en UTC. `expiresAtMorning()` (`server/src/routes/auth.js`) fait
 `setHours(6)` en heure serveur → expiration à 06:00 UTC = 08:00 heure française l'été. Les dates de
 séances utilisent aussi l'heure locale du serveur.
-**Solution.** Ajouter la variable d'environnement `TZ=Europe/Paris` dans les variables du service Railway
-(aucun changement de code). Vérifier ensuite dans les logs qu'une nouvelle session expire bien à 06:00 locale.
-**Effort S.**
+**Solution appliquée.** `process.env.TZ = process.env.TZ || 'Europe/Paris'` tout en haut de
+`server/src/index.js`, avant tout `require`. Pas besoin de configurer Railway : c'est un défaut dans
+le code, qui reste modifiable via une vraie variable d'env si besoin. Vérifié : une session créée le
+9/7/2026 expire bien à `2026-07-10T06:00:00` heure de Paris (`04:00:00Z`).
 
 ### 3. Session expirée : l'app reste affichée et toutes les actions échouent en silence
 **Problème.** Après l'expiration du matin, si l'onglet était resté ouvert, chaque clic provoque une
