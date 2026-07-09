@@ -12,11 +12,11 @@ router.get('/', requireManager, (req, res) => {
 // POST /api/app-users — créer un profil (manager)
 router.post('/', requireManager, (req, res) => {
   const { prenom, nom, email, role } = req.body;
-  if (!prenom || !nom || !email) return res.status(400).json({ error: 'Tous les champs sont requis' });
+  if (!prenom) return res.status(400).json({ error: 'Le prénom est requis' });
   try {
     const result = db.run(
       'INSERT INTO app_users (prenom, nom, email, role) VALUES (?, ?, ?, ?)',
-      [prenom.trim(), nom.trim(), email.trim().toLowerCase(), role === 'manager' ? 'manager' : 'user']
+      [prenom.trim(), (nom || '').trim(), email ? email.trim().toLowerCase() : null, role === 'manager' ? 'manager' : 'user']
     );
     const user = db.get('SELECT id, prenom, nom, email, role, actif FROM app_users WHERE id = ?', [result.lastInsertRowid]);
     db.run('INSERT INTO audit_log (user_id, action, entity, entity_id, details) VALUES (?, ?, ?, ?, ?)',
@@ -41,12 +41,14 @@ router.put('/:id', requireAuth, (req, res) => {
   const newRole = isManager && role ? (role === 'manager' ? 'manager' : 'user') : user.role;
   const newActif = isManager && actif !== undefined ? (actif ? 1 : 0) : user.actif;
 
+  const newEmail = email !== undefined ? (email ? email.trim().toLowerCase() : null) : user.email;
+
   db.run(
     'UPDATE app_users SET prenom=?, nom=?, email=?, role=?, actif=? WHERE id=?',
     [
       (prenom || user.prenom).trim(),
-      (nom || user.nom).trim(),
-      (email || user.email).trim().toLowerCase(),
+      (nom !== undefined ? nom : user.nom).trim(),
+      newEmail,
       newRole, newActif,
       req.params.id
     ]

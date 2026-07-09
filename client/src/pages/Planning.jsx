@@ -98,16 +98,16 @@ function VueGrille({ semaine, seances, loading, today, onOpenCard, onPatch, onDe
                 );
                 return (
                   <td key={iso} style={{ backgroundColor: row.cellBg }} className="border border-gray-200 align-top p-1 min-w-[110px]">
-                    <div className="space-y-1">
+                    <div className="space-y-1.5">
                       {loading && cellSeances.length === 0 && (
-                        <div className="h-4 bg-white/60 rounded animate-pulse" />
+                        <div className="h-4 bg-white/60 rounded-md animate-pulse" />
                       )}
                       {cellSeances.map(s => (
                         <SeanceCard key={s.id} seance={s} onPatch={onPatch} onDelete={onDelete} onClick={onOpenCard} />
                       ))}
                       <button
                         onClick={() => onAdd(iso)}
-                        className="w-full text-[10px] text-gray-400 hover:text-sky-600 py-0.5 border border-dashed border-gray-200 hover:border-sky-300 bg-white/40 rounded transition-colors"
+                        className="w-full text-[10px] text-gray-400 hover:text-sky-600 py-0.5 border border-dashed border-gray-300 hover:border-sky-300 bg-white/40 rounded-md transition-colors"
                       >+</button>
                     </div>
                   </td>
@@ -204,10 +204,8 @@ function VueListe({ seances, loading, onOpenCard, onPatch, onDelete }) {
                         {statut.label}
                       </button>
                     </td>
-                    <td className="px-3 py-1.5 border-b border-gray-100 text-center text-xs text-gray-500">
-                      <HeadcountPopover value={s.nb_presents} onSelect={(n) => onPatch(s.id, { nb_presents: n })}>
-                        {s.nb_presents ?? '—'}
-                      </HeadcountPopover>
+                    <td className="px-3 py-1.5 border-b border-gray-100 text-center">
+                      <HeadcountPopover value={s.nb_presents} onSelect={(n) => onPatch(s.id, { nb_presents: n })} />
                     </td>
                     <td className="px-3 py-1.5 border-b border-gray-100 text-xs text-gray-500">
                       {s.pointeur_nom ?? '—'}

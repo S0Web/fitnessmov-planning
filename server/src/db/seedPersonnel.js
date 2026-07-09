@@ -31,9 +31,9 @@ function addDays(iso, n) {
 }
 
 function ensureEmploye(prenom) {
-  const existing = db.get('SELECT id FROM employes WHERE prenom = ?', [prenom]);
+  const existing = db.get('SELECT id FROM app_users WHERE lower(prenom) = lower(?)', [prenom]);
   if (existing) return existing.id;
-  const result = db.run('INSERT INTO employes (prenom, nom) VALUES (?, ?)', [prenom, '']);
+  const result = db.run('INSERT INTO app_users (prenom, nom, role) VALUES (?, ?, ?)', [prenom, '', 'user']);
   return result.lastInsertRowid;
 }
 

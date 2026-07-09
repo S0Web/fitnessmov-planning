@@ -40,14 +40,14 @@ function UserModal({ user, onSave, onClose }) {
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Nom *</label>
-              <input required value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
+              <label className="block text-xs font-medium text-gray-600 mb-1">Nom</label>
+              <input value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">Email *</label>
-            <input type="email" required value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+            <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
           </div>
           <div className="flex gap-4">

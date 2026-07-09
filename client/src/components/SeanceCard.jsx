@@ -43,8 +43,8 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
     <div
       onClick={() => onClick(seance)}
       style={{ borderLeft, backgroundColor: sansCoach ? '#fee2e2' : '#ffffff' }}
-      className={`relative px-2 py-1.5 cursor-pointer group transition-opacity
-        border hover:border-gray-300
+      className={`relative px-2 py-1.5 cursor-pointer group rounded-md transition-all
+        border hover:shadow-sm hover:border-gray-300
         ${sansCoach ? 'border-red-300' : 'border-gray-200'}
         ${seance.statut === 'annule' ? 'opacity-40' : ''}
       `}
@@ -84,9 +84,7 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
           {statut.label}
         </button>
 
-        <HeadcountPopover value={seance.nb_presents} onSelect={(n) => onPatch(seance.id, { nb_presents: n })}>
-          {seance.nb_presents != null ? `${seance.nb_presents} pers.` : '+ effectif'}
-        </HeadcountPopover>
+        <HeadcountPopover value={seance.nb_presents} onSelect={(n) => onPatch(seance.id, { nb_presents: n })} />
       </div>
 
       {/* Supprimer (hover) */}

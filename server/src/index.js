@@ -14,7 +14,6 @@ const pointeursRouter = require('./routes/pointeurs');
 const dashboardRouter = require('./routes/dashboard');
 const appUsersRouter  = require('./routes/appUsers');
 const tasksRouter     = require('./routes/tasks');
-const employesRouter  = require('./routes/employes');
 const personnelCreneauxRouter = require('./routes/personnelCreneaux');
 
 const app  = express();
@@ -48,7 +47,6 @@ app.use('/api/pointeurs',   requireAuth, pointeursRouter);
 app.use('/api/dashboard',   requireAuth, dashboardRouter);
 app.use('/api/app-users',   appUsersRouter);
 app.use('/api/tasks',       requireAuth, tasksRouter);
-app.use('/api/employes',            requireAuth, employesRouter);
 app.use('/api/personnel-creneaux',  requireAuth, personnelCreneauxRouter);
 
 // Servir le front

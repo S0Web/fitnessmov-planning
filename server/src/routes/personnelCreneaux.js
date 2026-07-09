@@ -25,9 +25,9 @@ function todayISO() {
 router.get('/', (req, res) => {
   const { lundi, dimanche } = getSemaineBounds(req.query.semaine || todayISO());
   const rows = db.all(
-    `SELECT pc.*, e.prenom, e.nom
+    `SELECT pc.*, u.prenom, u.nom
      FROM personnel_creneaux pc
-     JOIN employes e ON e.id = pc.employe_id
+     JOIN app_users u ON u.id = pc.employe_id
      WHERE pc.date BETWEEN ? AND ?
      ORDER BY pc.employe_id, pc.date, pc.ordre`,
     [lundi, dimanche]
@@ -38,8 +38,8 @@ router.get('/', (req, res) => {
 // PUT /api/personnel-creneaux/:employe_id/:date — upsert jour complet
 router.put('/:employe_id/:date', (req, res) => {
   const { employe_id, date } = req.params;
-  const employe = db.get('SELECT id FROM employes WHERE id = ?', [employe_id]);
-  if (!employe) return res.status(404).json({ error: 'Employé introuvable' });
+  const employe = db.get('SELECT id FROM app_users WHERE id = ?', [employe_id]);
+  if (!employe) return res.status(404).json({ error: 'Profil introuvable' });
 
   try {
     upsertJour(employe_id, date, req.body);

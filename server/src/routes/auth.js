@@ -17,6 +17,30 @@ router.get('/profiles', (req, res) => {
   res.json(profiles);
 });
 
+// POST /api/auth/profiles — créer un nouveau profil (public, pas de mot de passe)
+// Un profil = aussi un employé planifiable dans "Planning personnel".
+router.post('/profiles', (req, res) => {
+  const { prenom, nom, email } = req.body;
+  if (!prenom || !prenom.trim()) return res.status(400).json({ error: 'Prénom requis' });
+
+  const count = db.get('SELECT COUNT(*) as n FROM app_users').n;
+  const role = count === 0 ? 'manager' : 'user';
+
+  try {
+    const result = db.run(
+      'INSERT INTO app_users (prenom, nom, email, role) VALUES (?, ?, ?, ?)',
+      [prenom.trim(), (nom || '').trim(), email ? email.trim().toLowerCase() : null, role]
+    );
+    const user = db.get('SELECT id, prenom, nom, email, role FROM app_users WHERE id = ?', [result.lastInsertRowid]);
+    db.run('INSERT INTO audit_log (user_id, action, entity, entity_id, details) VALUES (?, ?, ?, ?, ?)',
+      [user.id, 'create_profile', 'app_users', user.id, `${user.prenom} ${user.nom}`.trim()]);
+    res.status(201).json(user);
+  } catch (e) {
+    if (e.message.includes('UNIQUE')) return res.status(409).json({ error: 'Email déjà utilisé' });
+    throw e;
+  }
+});
+
 // POST /api/auth/select — choisir un profil (pas de mot de passe)
 router.post('/select', (req, res) => {
   const { user_id } = req.body;
@@ -44,22 +68,6 @@ router.post('/logout', requireAuth, (req, res) => {
 // GET /api/auth/me
 router.get('/me', requireAuth, (req, res) => {
   res.json(req.user);
-});
-
-// POST /api/auth/init — crée le premier manager si aucun profil n'existe
-router.post('/init', (req, res) => {
-  const count = db.get('SELECT COUNT(*) as n FROM app_users');
-  if (count.n > 0) return res.status(409).json({ error: 'Des profils existent déjà' });
-
-  const { prenom, nom, email } = req.body;
-  if (!prenom || !nom || !email) return res.status(400).json({ error: 'Tous les champs sont requis' });
-
-  const result = db.run(
-    'INSERT INTO app_users (prenom, nom, email, role) VALUES (?, ?, ?, ?)',
-    [prenom.trim(), nom.trim(), email.trim().toLowerCase(), 'manager']
-  );
-  const user = db.get('SELECT id, prenom, nom, email, role FROM app_users WHERE id = ?', [result.lastInsertRowid]);
-  res.status(201).json(user);
 });
 
 module.exports = { router };

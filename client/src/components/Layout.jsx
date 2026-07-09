@@ -15,7 +15,7 @@ export default function Layout({ children }) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
-      <header className="bg-sky-700 text-white shadow-md">
+      <header className="sticky top-0 z-30 bg-sky-700 text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-8">
           <span className="font-bold text-lg tracking-tight">Fitnessmov&apos; Planning</span>
           <nav className="flex gap-1">

@@ -132,8 +132,8 @@ db.run(`
   CREATE TABLE IF NOT EXISTS app_users (
     id            INTEGER PRIMARY KEY AUTOINCREMENT,
     prenom        TEXT NOT NULL,
-    nom           TEXT NOT NULL,
-    email         TEXT NOT NULL UNIQUE,
+    nom           TEXT NOT NULL DEFAULT '',
+    email         TEXT UNIQUE,
     role          TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','manager')),
     actif         INTEGER NOT NULL DEFAULT 1,
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -171,6 +171,38 @@ db.run(`
   }
 })();
 
+// Migration : rendre app_users.email optionnel (les profils n'ont plus besoin d'email)
+;(function migrateEmailNullable() {
+  try {
+    const cols = db.all('PRAGMA table_info(app_users)');
+    const emailCol = cols.find(c => c.name === 'email');
+    if (!emailCol || emailCol.notnull === 0) return; // déjà OK
+    console.log('⚙️  Migration: app_users.email devient optionnel...');
+    db.run('PRAGMA foreign_keys = OFF');
+    db.run('BEGIN');
+    db.run(`CREATE TABLE app_users_mig2 (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      prenom        TEXT NOT NULL,
+      nom           TEXT NOT NULL DEFAULT '',
+      email         TEXT UNIQUE,
+      role          TEXT NOT NULL DEFAULT 'user' CHECK(role IN ('user','manager')),
+      actif         INTEGER NOT NULL DEFAULT 1,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    db.run(`INSERT INTO app_users_mig2 (id, prenom, nom, email, role, actif, created_at)
+            SELECT id, prenom, nom, email, role, actif, created_at FROM app_users`);
+    db.run('DROP TABLE app_users');
+    db.run('ALTER TABLE app_users_mig2 RENAME TO app_users');
+    db.run('COMMIT');
+    db.run('PRAGMA foreign_keys = ON');
+    console.log('✅ Migration email optionnel OK');
+  } catch (e) {
+    try { db.run('ROLLBACK'); } catch (_) {}
+    db.run('PRAGMA foreign_keys = ON');
+    console.error('Migration error (email nullable):', e.message);
+  }
+})();
+
 db.run(`
   CREATE TABLE IF NOT EXISTS sessions (
     token      TEXT PRIMARY KEY,
@@ -204,22 +236,12 @@ db.run(`
   )
 `);
 
-// ─── Planning personnel (employés de la salle, distinct des coachs) ──────────
-
-db.run(`
-  CREATE TABLE IF NOT EXISTS employes (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    prenom      TEXT NOT NULL,
-    nom         TEXT NOT NULL DEFAULT '',
-    actif       INTEGER NOT NULL DEFAULT 1,
-    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
-  )
-`);
+// ─── Planning personnel (les profils app_users servent aussi d'employés) ────
 
 db.run(`
   CREATE TABLE IF NOT EXISTS personnel_creneaux (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    employe_id  INTEGER NOT NULL REFERENCES employes(id) ON DELETE CASCADE,
+    employe_id  INTEGER NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     date        TEXT NOT NULL,
     type        TEXT NOT NULL DEFAULT 'travail'
                 CHECK(type IN ('travail','cp','ecole','ferie','arret','absent','repos')),
@@ -234,12 +256,95 @@ db.run('CREATE INDEX IF NOT EXISTS idx_personnel_creneaux_emp_date ON personnel_
 
 db.run(`
   CREATE TABLE IF NOT EXISTS personnel_semaine_meta (
-    employe_id    INTEGER NOT NULL REFERENCES employes(id) ON DELETE CASCADE,
+    employe_id    INTEGER NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
     semaine       TEXT NOT NULL,
     code_couleur  TEXT CHECK(code_couleur IN ('ouverture','milieu','fermeture') OR code_couleur IS NULL),
     PRIMARY KEY (employe_id, semaine)
   )
 `);
+
+// Migration : fusionner l'ancienne table employes dans app_users (les profils
+// deviennent aussi les employés planifiables), en conservant tout l'historique.
+;(function migrateMergeEmployesIntoAppUsers() {
+  try {
+    const exists = db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='employes'");
+    if (!exists) return; // déjà migré (table employes absente)
+
+    console.log('⚙️  Migration: fusion employes → app_users...');
+    db.run('PRAGMA foreign_keys = OFF');
+    db.run('BEGIN');
+
+    const employesRows = db.all('SELECT * FROM employes');
+    const idMap = {};
+    for (const emp of employesRows) {
+      // Rapprochement par prénom seul (le nom peut avoir été renseigné d'un
+      // côté et pas de l'autre) — équipe restreinte, risque de collision faible.
+      const match = db.get('SELECT id, nom FROM app_users WHERE lower(prenom) = lower(?)', [emp.prenom]);
+      if (match) {
+        idMap[emp.id] = match.id;
+        // Reporte le nom de famille si l'employé en a un et pas le profil (ne perd pas
+        // les noms ajoutés manuellement via "Gérer les employés").
+        if (emp.nom && !match.nom) {
+          db.run('UPDATE app_users SET nom = ? WHERE id = ?', [emp.nom, match.id]);
+        }
+      } else {
+        const result = db.run(
+          'INSERT INTO app_users (prenom, nom, role, actif) VALUES (?, ?, ?, ?)',
+          [emp.prenom, emp.nom || '', 'user', emp.actif]
+        );
+        idMap[emp.id] = result.lastInsertRowid;
+      }
+    }
+
+    db.run(`CREATE TABLE personnel_creneaux_mig (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      employe_id  INTEGER NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      date        TEXT NOT NULL,
+      type        TEXT NOT NULL DEFAULT 'travail'
+                  CHECK(type IN ('travail','cp','ecole','ferie','arret','absent','repos')),
+      debut       TEXT,
+      fin         TEXT,
+      ordre       INTEGER NOT NULL DEFAULT 0,
+      notes       TEXT,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    for (const c of db.all('SELECT * FROM personnel_creneaux')) {
+      db.run(
+        `INSERT INTO personnel_creneaux_mig (id, employe_id, date, type, debut, fin, ordre, notes, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [c.id, idMap[c.employe_id] ?? c.employe_id, c.date, c.type, c.debut, c.fin, c.ordre, c.notes, c.created_at]
+      );
+    }
+    db.run('DROP TABLE personnel_creneaux');
+    db.run('ALTER TABLE personnel_creneaux_mig RENAME TO personnel_creneaux');
+    db.run('CREATE INDEX IF NOT EXISTS idx_personnel_creneaux_emp_date ON personnel_creneaux(employe_id, date)');
+
+    db.run(`CREATE TABLE personnel_semaine_meta_mig (
+      employe_id    INTEGER NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      semaine       TEXT NOT NULL,
+      code_couleur  TEXT CHECK(code_couleur IN ('ouverture','milieu','fermeture') OR code_couleur IS NULL),
+      PRIMARY KEY (employe_id, semaine)
+    )`);
+    for (const m of db.all('SELECT * FROM personnel_semaine_meta')) {
+      db.run(
+        'INSERT OR IGNORE INTO personnel_semaine_meta_mig (employe_id, semaine, code_couleur) VALUES (?, ?, ?)',
+        [idMap[m.employe_id] ?? m.employe_id, m.semaine, m.code_couleur]
+      );
+    }
+    db.run('DROP TABLE personnel_semaine_meta');
+    db.run('ALTER TABLE personnel_semaine_meta_mig RENAME TO personnel_semaine_meta');
+
+    db.run('DROP TABLE employes');
+
+    db.run('COMMIT');
+    db.run('PRAGMA foreign_keys = ON');
+    console.log(`✅ Migration fusion employes→app_users OK (${employesRows.length} employé(s) traité(s))`);
+  } catch (e) {
+    try { db.run('ROLLBACK'); } catch (_) {}
+    db.run('PRAGMA foreign_keys = ON');
+    console.error('Migration error (fusion employes):', e.message);
+  }
+})();
 
 db.run(`
   CREATE TABLE IF NOT EXISTS modifications_ponctuelles (
