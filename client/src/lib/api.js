@@ -14,6 +14,10 @@ async function req(path, options = {}) {
     ...options,
   });
   if (!res.ok) {
+    if (res.status === 401 && path !== '/auth/select') {
+      localStorage.removeItem('fm_token');
+      if (window.location.pathname !== '/login') window.location.assign('/login');
+    }
     const err = await res.json().catch(() => ({ error: res.statusText }));
     throw new Error(err.error || res.statusText);
   }

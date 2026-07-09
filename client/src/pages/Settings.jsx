@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import { parseServerDate } from '../lib/utils';
+import { parseServerDate, colorForUser } from '../lib/utils';
 
 function UserModal({ user, onSave, onClose }) {
   const isNew = !user?.id;
@@ -134,7 +134,7 @@ export default function Settings() {
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center gap-4 mb-4">
             <div className="h-14 w-14 rounded-full flex items-center justify-center text-white text-xl font-bold"
-              style={{ backgroundColor: '#2fa8cc' }}>
+              style={{ backgroundColor: colorForUser(me?.id) }}>
               {me?.prenom?.[0]}{me?.nom?.[0]}
             </div>
             <div>

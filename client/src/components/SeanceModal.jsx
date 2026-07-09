@@ -45,10 +45,23 @@ function PointeurSelector({ value, pointeurs, onChange, onAdd, onDelete }) {
         {value && (
           <button
             type="button"
-            onClick={() => { onChange(''); onDelete(Number(value)); }}
-            title="Supprimer ce pointeur"
-            className="px-2 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 text-sm transition-colors"
+            onClick={() => onChange('')}
+            title="Désélectionner"
+            className="px-2 py-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg border border-gray-200 text-sm transition-colors"
           >✕</button>
+        )}
+        {value && (
+          <button
+            type="button"
+            onClick={() => {
+              const nom = (pointeurs || []).find(p => p.id === Number(value))?.nom || '';
+              if (!window.confirm(`Supprimer définitivement le pointeur "${nom}" ? Cette action est irréversible et impacte tout le monde.`)) return;
+              onChange('');
+              onDelete(Number(value));
+            }}
+            title="Supprimer définitivement ce pointeur"
+            className="px-2 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 text-sm transition-colors"
+          >🗑</button>
         )}
       </div>
       <div className="flex gap-1">
