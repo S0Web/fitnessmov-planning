@@ -139,7 +139,7 @@ export default function PlanningPersonnel() {
         ) : rows.length === 0 ? (
           <p className="text-sm text-gray-400 py-10 text-center">Aucun profil — ajoute-en un depuis l'écran d'accueil.</p>
         ) : (
-          <div className="border border-gray-200 rounded-xl overflow-hidden bg-white shadow-sm">
+          <div className="border border-gray-200 rounded-xl bg-white shadow-sm">
             <table className="w-full border-collapse table-fixed text-sm">
               <colgroup>
                 <col style={{ width: '150px' }} />
@@ -148,7 +148,7 @@ export default function PlanningPersonnel() {
               </colgroup>
               <thead>
                 <tr>
-                  <th className="sticky top-14 z-20 bg-gray-50 border-b border-gray-200 p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                  <th className="sticky top-14 z-20 bg-gray-50 border-b border-gray-200 rounded-tl-xl p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
                     Employé
                   </th>
                   {semaine.map((date) => {
@@ -165,7 +165,7 @@ export default function PlanningPersonnel() {
                       </th>
                     );
                   })}
-                  <th className="sticky top-14 z-20 bg-gray-50 border-b border-gray-200 p-2 text-center text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                  <th className="sticky top-14 z-20 bg-sky-50 border-b border-gray-200 rounded-tr-xl p-2 text-center text-[11px] font-bold text-sky-700 uppercase tracking-wide">
                     Total
                   </th>
                 </tr>
@@ -221,7 +221,7 @@ export default function PlanningPersonnel() {
                           </td>
                         );
                       })}
-                      <td className="text-center text-sm font-semibold text-gray-500 tabular-nums">
+                      <td className="text-center text-sm font-bold text-sky-700 bg-sky-50/60 tabular-nums">
                         {fmtHeures(totalMinutes)}
                       </td>
                     </tr>

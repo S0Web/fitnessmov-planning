@@ -104,20 +104,9 @@ export default function Settings() {
     api.getAppUsers().then(setUsers);
   }
 
-  const [seeding, setSeeding] = useState(false);
-  const [seedResult, setSeedResult] = useState(null);
-
-  async function handleSeedPersonnel() {
-    setSeeding(true);
-    setSeedResult(null);
-    try {
-      const res = await api.seedPersonnelHistorique();
-      setSeedResult({ ok: true, message: `${res.jours} jour(s) importé(s), ${res.ignores} déjà renseigné(s) ignoré(s).` });
-    } catch (err) {
-      setSeedResult({ ok: false, message: err.message });
-    } finally {
-      setSeeding(false);
-    }
+  async function handleToggleActif(u) {
+    await api.updateAppUser(u.id, { actif: u.actif ? 0 : 1 });
+    api.getAppUsers().then(setUsers);
   }
 
   const TABS = [
@@ -167,23 +156,12 @@ export default function Settings() {
         <div>
           <div className="flex justify-between items-center mb-3 gap-3">
             <span className="text-sm text-gray-500">{users.length} utilisateur(s)</span>
-            <div className="flex items-center gap-3">
-              <button onClick={handleSeedPersonnel} disabled={seeding}
-                className="text-xs px-3 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50">
-                {seeding ? 'Import…' : 'Importer l’historique du planning personnel'}
-              </button>
-              <button onClick={() => setModal({})}
-                className="text-white px-4 py-2 rounded text-sm font-medium"
-                style={{ backgroundColor: '#2fa8cc' }}>
-                + Nouveau
-              </button>
-            </div>
+            <button onClick={() => setModal({})}
+              className="text-white px-4 py-2 rounded text-sm font-medium"
+              style={{ backgroundColor: '#2fa8cc' }}>
+              + Nouveau
+            </button>
           </div>
-          {seedResult && (
-            <div className={`mb-3 text-sm rounded px-3 py-2 ${seedResult.ok ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'}`}>
-              {seedResult.message}
-            </div>
-          )}
           <table className="w-full border-collapse text-sm">
             <thead>
               <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
@@ -199,9 +177,11 @@ export default function Settings() {
                   <td className="px-3 py-2 text-gray-500">{u.email}</td>
                   <td className="px-3 py-2">{u.role === 'manager' ? '⭐ Manager' : 'Utilisateur'}</td>
                   <td className="px-3 py-2">
-                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${u.actif ? 'text-green-700 bg-green-50' : 'text-gray-500 bg-gray-100'}`}>
+                    <button onClick={() => handleToggleActif(u)}
+                      title="Cliquer pour changer le statut"
+                      className={`text-xs px-2 py-0.5 rounded font-medium transition-colors ${u.actif ? 'text-green-700 bg-green-50 hover:bg-green-100' : 'text-gray-500 bg-gray-100 hover:bg-gray-200'}`}>
                       {u.actif ? 'Actif' : 'Inactif'}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-3 py-2">
                     <button onClick={() => setModal(u)} className="text-xs text-sky-600 hover:underline">Modifier</button>
