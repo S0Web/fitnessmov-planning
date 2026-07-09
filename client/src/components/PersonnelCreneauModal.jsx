@@ -6,7 +6,6 @@ const TYPES = [
   { id: 'ecole',   label: 'École' },
   { id: 'ferie',   label: 'Férié' },
   { id: 'arret',   label: 'Arrêt' },
-  { id: 'absent',  label: 'Absent' },
   { id: 'repos',   label: 'Repos' },
 ];
 
@@ -87,7 +86,7 @@ export default function PersonnelCreneauModal({ employe, date, creneaux, onSave,
 
           {type === 'travail' && (
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700">Horaires (coupures possibles)</label>
+              <label className="block text-sm font-medium text-gray-700">Horaires</label>
               {segments.map((seg, i) => (
                 <div key={i} className="flex items-center gap-2">
                   <input
@@ -110,7 +109,7 @@ export default function PersonnelCreneauModal({ employe, date, creneaux, onSave,
               {segments.length < 2 && (
                 <button type="button" onClick={addSegment}
                   className="text-xs text-sky-600 hover:underline">
-                  + Ajouter un 2e créneau (coupure)
+                  + Ajouter un 2e créneau
                 </button>
               )}
             </div>
@@ -118,12 +117,12 @@ export default function PersonnelCreneauModal({ employe, date, creneaux, onSave,
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-            <div className="flex gap-1.5 flex-wrap">
+            <div className="grid grid-cols-3 gap-2">
               {TYPES.map(t => (
                 <button
                   key={t.id} type="button"
                   onClick={() => setType(t.id)}
-                  className={`px-2.5 py-1 rounded text-xs font-bold uppercase tracking-wide transition-all
+                  className={`py-1.5 rounded text-xs font-bold uppercase tracking-wide transition-all
                     ${type === t.id ? 'bg-sky-600 text-white ring-2 ring-offset-1 ring-sky-400' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
                 >
                   {t.label}
@@ -137,7 +136,6 @@ export default function PersonnelCreneauModal({ employe, date, creneaux, onSave,
             <textarea
               rows={2} value={notes}
               onChange={e => setNotes(e.target.value)}
-              placeholder="RECUP, remplacement..."
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 resize-none"
             />
           </div>

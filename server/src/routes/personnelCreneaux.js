@@ -35,6 +35,26 @@ router.get('/', (req, res) => {
   res.json(rows);
 });
 
+// GET /api/personnel-creneaux/cp-summary — nombre de CP pris (manager: tout le monde, sinon: soi-même)
+router.get('/cp-summary', (req, res) => {
+  if (req.user.role === 'manager') {
+    const rows = db.all(`
+      SELECT u.id, u.prenom, u.nom, COUNT(*) as cp
+      FROM personnel_creneaux pc
+      JOIN app_users u ON u.id = pc.employe_id
+      WHERE pc.type = 'cp'
+      GROUP BY u.id
+      ORDER BY u.prenom
+    `);
+    return res.json(rows);
+  }
+  const row = db.get(
+    `SELECT COUNT(*) as cp FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp'`,
+    [req.user.id]
+  );
+  res.json([{ id: req.user.id, prenom: req.user.prenom, nom: req.user.nom, cp: row.cp }]);
+});
+
 // PUT /api/personnel-creneaux/:employe_id/:date — upsert jour complet
 router.put('/:employe_id/:date', (req, res) => {
   const { employe_id, date } = req.params;

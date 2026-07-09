@@ -2,7 +2,7 @@ const db = require('./database');
 const { upsertJour } = require('./personnelWrite');
 const weeks = require('./personnelData');
 
-const ABSENCE = { cp: 'cp', ecole: 'ecole', ferie: 'ferie', arret: 'arret', absent: 'absent', x: 'repos' };
+const ABSENCE = { cp: 'cp', ecole: 'ecole', ferie: 'ferie', arret: 'arret', absent: 'repos', x: 'repos' };
 
 function normTime(tok) {
   const m = tok.trim().toLowerCase().match(/^(\d{1,2})h(\d{0,2})$/);
