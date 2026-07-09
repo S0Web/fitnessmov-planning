@@ -1,3 +1,8 @@
+// Fuseau horaire de la salle : à définir AVANT tout usage de Date
+// (le conteneur Railway est en UTC ; sans ça, la déconnexion "6h du matin"
+// tombe à 8h heure française l'été).
+process.env.TZ = process.env.TZ || 'Europe/Paris';
+
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
