@@ -86,18 +86,27 @@ router.post('/dupliquer', (req, res) => {
   const diffMs = new Date(lc + 'T00:00:00') - new Date(ls + 'T00:00:00');
   const diffDays = Math.round(diffMs / 86400000);
 
+  const pad = (n) => String(n).padStart(2, '0');
   db.run('BEGIN');
+  let count = 0, ignores = 0;
   try {
     for (const s of sources) {
       const srcDate = new Date(s.date + 'T00:00:00');
       srcDate.setDate(srcDate.getDate() + diffDays);
-      const pad = (n) => String(n).padStart(2, '0');
       const newDate = `${srcDate.getFullYear()}-${pad(srcDate.getMonth() + 1)}-${pad(srcDate.getDate())}`;
+      // Non destructif : on ne recrée pas un cours identique (même jour, même
+      // horaire, même type) s'il existe déjà dans la semaine cible.
+      const existing = db.get(
+        'SELECT id FROM seances WHERE date = ? AND horaire = ? AND cours_type_id = ?',
+        [newDate, s.horaire, s.cours_type_id]
+      );
+      if (existing) { ignores++; continue; }
       db.run(
         `INSERT INTO seances (date, cours_type_id, coach_id, horaire, duree_minutes, statut, nb_presents, pointeur_id, notes)
          VALUES (?, ?, ?, ?, ?, 'programme', NULL, NULL, NULL)`,
         [newDate, s.cours_type_id, s.coach_id || null, s.horaire, s.duree_minutes || 60]
       );
+      count++;
     }
     db.run('COMMIT');
   } catch (e) {
@@ -105,7 +114,7 @@ router.post('/dupliquer', (req, res) => {
     return res.status(500).json({ error: e.message });
   }
 
-  res.json({ ok: true, count: sources.length });
+  res.json({ ok: true, count, ignores });
 });
 
 // POST /api/seances

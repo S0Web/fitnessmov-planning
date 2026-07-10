@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../lib/api';
 import {
   getLundi, getSemaine, toISO,
@@ -55,12 +55,12 @@ function VueGrille({ semaine, seances, loading, today, onOpenCard, onPatch, onDe
 
         <thead>
           <tr>
-            <th className="static md:sticky md:top-14 z-20 bg-gray-100 border border-gray-300 p-0" />
+            <th className="z-20 bg-gray-100 border border-gray-300 p-0" />
             {semaine.map((date) => {
               const iso = toISO(date);
               const isToday = iso === today;
               return (
-                <th key={iso} className={`static md:sticky md:top-14 z-20 border border-gray-300 p-0 text-center ${isToday ? 'bg-sky-600' : 'bg-gray-100'}`}>
+                <th key={iso} className={`z-20 border border-gray-300 p-0 text-center ${isToday ? 'bg-sky-600' : 'bg-gray-100'}`}>
                   <div className={`px-1 py-1.5 ${isToday ? 'text-white' : 'text-gray-700'}`}>
                     <div className={`text-[10px] font-bold uppercase tracking-wide ${isToday ? 'text-sky-100' : 'text-gray-400'}`}>
                       {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
@@ -135,7 +135,7 @@ function VueListe({ seances, loading, onOpenCard, onPatch, onDelete }) {
     return acc;
   }, {});
 
-  const TH = 'static md:sticky md:top-14 z-20 bg-gray-100 px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wide border border-gray-200';
+  const TH = 'z-20 bg-gray-100 px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wide border border-gray-200';
 
   return (
     <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
@@ -236,6 +236,7 @@ export default function Planning() {
   const [modal, setModal]         = useState(null);
   const [vue, setVue]             = useState('grille');
   const [dupliquer, setDupliquer] = useState(false);
+  const [filtreCours, setFiltreCours] = useState(() => new Set());
 
   const semaine = getSemaine(lundi);
 
@@ -294,12 +295,17 @@ export default function Planning() {
     }
   }
   async function handleDupliquer() {
+    if (!confirm('Copier les cours de la semaine précédente vers cette semaine ?\n\n(Les cours déjà présents ne sont pas touchés.)')) return;
     const source = toISO(semainePrecedente(lundi));
     setDupliquer(true);
     try {
-      const { count } = await api.dupliquerSemaine(source, toISO(lundi));
+      const { count, ignores } = await api.dupliquerSemaine(source, toISO(lundi));
       await loadSeances();
-      toast.success(`${count} séance(s) copiée(s) depuis la semaine précédente`);
+      toast.success(
+        count === 0
+          ? 'Rien à copier (semaine précédente vide ou déjà présente).'
+          : `${count} cours copié(s)${ignores ? `, ${ignores} déjà présent(s) conservé(s)` : ''}.`
+      );
     } catch (e) {
       toast.error('Erreur : ' + e.message);
     } finally {
@@ -307,9 +313,21 @@ export default function Planning() {
     }
   }
 
+  function toggleFiltre(id) {
+    setFiltreCours(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
+  const filteredSeances = useMemo(
+    () => (filtreCours.size === 0 ? seances : seances.filter(s => filtreCours.has(s.cours_type_id))),
+    [seances, filtreCours]
+  );
+
   const today = toISO(new Date());
   const isCurrentWeek = semaine.some(d => toISO(d) === today);
-  const semaineVide = !loading && seances.length === 0;
   const total     = seances.length;
   const effectues = seances.filter(s => s.statut === 'effectue' || s.statut === 'paye').length;
   const annules   = seances.filter(s => s.statut === 'annule').length;
@@ -321,6 +339,30 @@ export default function Planning() {
       {/* ── Sidebar ──────────────────────────────────────────────────── */}
       <aside className="hidden lg:block w-48 flex-shrink-0">
         <MiniCalendar lundi={lundi} onSelectDate={(d) => setLundi(getLundi(d))} />
+
+        {/* Filtrer par cours */}
+        <div className="mt-3 bg-white border border-gray-200 rounded text-xs">
+          <div className="flex items-center justify-between px-3 py-2">
+            <span className="font-semibold text-gray-600 text-[11px] uppercase tracking-wide">Filtrer par…</span>
+            {filtreCours.size > 0 && (
+              <button onClick={() => setFiltreCours(new Set())} className="text-[11px] text-sky-600 hover:underline">Tout</button>
+            )}
+          </div>
+          <div className="max-h-56 overflow-y-auto px-3 pb-2 space-y-0.5">
+            {coursTypes.map(ct => (
+              <label key={ct.id} className="flex items-center gap-1.5 py-0.5 cursor-pointer hover:text-gray-900 text-gray-600">
+                <input
+                  type="checkbox"
+                  checked={filtreCours.has(ct.id)}
+                  onChange={() => toggleFiltre(ct.id)}
+                  className="rounded accent-sky-500"
+                />
+                <span className="truncate">{ct.nom}</span>
+              </label>
+            ))}
+            {coursTypes.length === 0 && <p className="text-gray-400 italic py-1">Aucun cours</p>}
+          </div>
+        </div>
 
         <div className="mt-3 bg-white border border-gray-200 rounded px-3 py-2 text-xs space-y-1.5">
           <div className="font-semibold text-gray-600 text-[11px] uppercase tracking-wide mb-1">Séances</div>
@@ -363,6 +405,12 @@ export default function Planning() {
             </span>
           </div>
 
+          <button onClick={handleDupliquer} disabled={dupliquer}
+            title="Copie les cours de la semaine précédente (sans écraser ceux déjà présents)"
+            className="flex-shrink-0 px-2.5 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-xs font-medium rounded disabled:opacity-50">
+            {dupliquer ? 'Duplication…' : '⧉ Dupliquer'}
+          </button>
+
           <div className="flex items-center bg-gray-100 rounded p-0.5 gap-0.5 flex-shrink-0">
             <button onClick={() => setVue('grille')}
               className={`px-2.5 py-1 rounded text-xs font-medium transition-colors ${
@@ -381,25 +429,10 @@ export default function Planning() {
           </div>
         )}
 
-        {/* Semaine vide — bouton dupliquer */}
-        {semaineVide && (
-          <div className="flex flex-col items-center justify-center py-16 gap-3 text-gray-500">
-            <p className="text-sm">Aucune séance cette semaine.</p>
-            <button
-              onClick={handleDupliquer}
-              disabled={dupliquer}
-              className="flex items-center gap-2 px-5 py-2.5 bg-sky-600 text-white text-sm font-medium rounded hover:bg-sky-700 disabled:opacity-50 transition-colors"
-            >
-              {dupliquer ? 'Duplication…' : '⧉ Dupliquer la semaine précédente'}
-            </button>
-            <p className="text-xs text-gray-400">Copie les cours de la semaine du {semainePrecedente(lundi).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })} en statut Programmé</p>
-          </div>
-        )}
-
-        {!semaineVide && vue === 'grille' && (
+        {vue === 'grille' && (
           <VueGrille
             semaine={semaine}
-            seances={seances}
+            seances={filteredSeances}
             loading={loading}
             today={today}
             onOpenCard={(s) => setModal(s)}
@@ -409,14 +442,18 @@ export default function Planning() {
           />
         )}
 
-        {!semaineVide && vue === 'liste' && (
-          <VueListe
-            seances={seances}
-            loading={loading}
-            onOpenCard={(s) => setModal(s)}
-            onPatch={handlePatch}
-            onDelete={handleDelete}
-          />
+        {vue === 'liste' && (
+          filteredSeances.length === 0 && !loading ? (
+            <p className="text-sm text-gray-400 py-10 text-center">Aucune séance à afficher.</p>
+          ) : (
+            <VueListe
+              seances={filteredSeances}
+              loading={loading}
+              onOpenCard={(s) => setModal(s)}
+              onPatch={handlePatch}
+              onDelete={handleDelete}
+            />
+          )
         )}
       </div>
 

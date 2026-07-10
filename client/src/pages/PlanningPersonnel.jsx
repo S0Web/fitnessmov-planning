@@ -278,14 +278,14 @@ export default function PlanningPersonnel() {
               </colgroup>
               <thead>
                 <tr>
-                  <th className="static md:sticky md:top-14 z-20 bg-gray-50 border-b border-gray-200 rounded-tl-xl p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                  <th className="z-20 bg-gray-50 border-b border-gray-200 rounded-tl-xl p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
                     Employé
                   </th>
                   {semaine.map((date) => {
                     const iso = toISO(date);
                     const isToday = iso === today;
                     return (
-                      <th key={iso} className={`static md:sticky md:top-14 z-20 border-b border-gray-200 p-1.5 text-center ${isToday ? 'bg-sky-50' : 'bg-gray-50'}`}>
+                      <th key={iso} className={`z-20 border-b border-gray-200 p-1.5 text-center ${isToday ? 'bg-sky-50' : 'bg-gray-50'}`}>
                         <div className={`text-[10px] font-semibold uppercase tracking-wide ${isToday ? 'text-sky-500' : 'text-gray-400'}`}>
                           {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
                         </div>
@@ -295,7 +295,7 @@ export default function PlanningPersonnel() {
                       </th>
                     );
                   })}
-                  <th className="static md:sticky md:top-14 z-20 bg-sky-50 border-b border-gray-200 rounded-tr-xl p-2 text-center text-[11px] font-bold text-sky-700 uppercase tracking-wide">
+                  <th className="z-20 bg-sky-50 border-b border-gray-200 rounded-tr-xl p-2 text-center text-[11px] font-bold text-sky-700 uppercase tracking-wide">
                     Total
                   </th>
                 </tr>

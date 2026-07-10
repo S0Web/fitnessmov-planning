@@ -244,7 +244,7 @@ export default function Coaches() {
     grandTotal += c.total || 0;
   }
 
-  const TH = 'static md:sticky md:top-14 z-20 bg-gray-100 px-2 py-2 text-xs font-bold text-gray-600 uppercase border border-gray-200 text-center whitespace-nowrap';
+  const TH = 'z-20 bg-gray-100 px-2 py-2 text-xs font-bold text-gray-600 uppercase border border-gray-200 text-center whitespace-nowrap';
 
   const kpi    = dashboard?.kpi    || {};
   const mensuel = dashboard?.mensuel || [];
