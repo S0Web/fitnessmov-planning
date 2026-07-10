@@ -4,6 +4,7 @@ import {
   getLundi, getSemaine, toISO,
   semaineSuivante, semainePrecedente, STATUT_CONFIG,
 } from '../lib/utils';
+import { useToast } from '../context/ToastContext';
 import SeanceCard from '../components/SeanceCard';
 import SeanceModal from '../components/SeanceModal';
 import MiniCalendar from '../components/MiniCalendar';
@@ -224,6 +225,7 @@ function VueListe({ seances, loading, onOpenCard, onPatch, onDelete }) {
 // ── Page principale ────────────────────────────────────────────────────────────
 
 export default function Planning() {
+  const toast = useToast();
   const [lundi, setLundi]         = useState(() => getLundi());
   const [seances, setSeances]     = useState([]);
   const [coaches, setCoaches]     = useState([]);
@@ -259,31 +261,47 @@ export default function Planning() {
   useEffect(() => { loadSeances(); }, [loadSeances]);
 
   async function handlePatch(id, data) {
-    await api.patchSeance(id, data);
-    loadSeances();
+    try {
+      await api.patchSeance(id, data);
+      loadSeances();
+    } catch (e) {
+      toast.error('Échec de la mise à jour : ' + e.message);
+    }
   }
   async function handleDelete(id) {
     if (!confirm('Supprimer cette séance ?')) return;
-    await api.deleteSeance(id);
-    setSeances(prev => prev.filter(s => s.id !== id));
+    try {
+      await api.deleteSeance(id);
+      setSeances(prev => prev.filter(s => s.id !== id));
+      toast.success('Séance supprimée');
+    } catch (e) {
+      toast.error('Échec de la suppression : ' + e.message);
+    }
   }
   async function handleSave(payload) {
-    if (modal && typeof modal === 'object') {
-      await api.patchSeance(modal.id, payload);
-    } else if (modal && typeof modal === 'string') {
-      await api.createSeance({ ...payload, date: modal.replace('new:', '') });
+    try {
+      if (modal && typeof modal === 'object') {
+        await api.patchSeance(modal.id, payload);
+      } else if (modal && typeof modal === 'string') {
+        await api.createSeance({ ...payload, date: modal.replace('new:', '') });
+      }
+      setModal(null);
+      loadSeances();
+      toast.success('Séance enregistrée');
+    } catch (e) {
+      toast.error('Échec de l\'enregistrement : ' + e.message);
+      throw e;
     }
-    setModal(null);
-    loadSeances();
   }
   async function handleDupliquer() {
     const source = toISO(semainePrecedente(lundi));
     setDupliquer(true);
     try {
-      await api.dupliquerSemaine(source, toISO(lundi));
+      const { count } = await api.dupliquerSemaine(source, toISO(lundi));
       await loadSeances();
+      toast.success(`${count} séance(s) copiée(s) depuis la semaine précédente`);
     } catch (e) {
-      alert('Erreur : ' + e.message);
+      toast.error('Erreur : ' + e.message);
     } finally {
       setDupliquer(false);
     }

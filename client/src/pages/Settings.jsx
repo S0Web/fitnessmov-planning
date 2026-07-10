@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { parseServerDate, colorForUser } from '../lib/utils';
 
 function UserModal({ user, onSave, onClose }) {
@@ -84,32 +85,73 @@ function UserModal({ user, onSave, onClose }) {
   );
 }
 
+const AUDIT_PAGE = 50;
+
+const ACTION_LABELS = {
+  switch_profile: 'Connexion au profil',
+  create_profile: 'Profil créé',
+  update_seance: 'Séance modifiée',
+  update_personnel_creneau: 'Planning personnel modifié',
+  dupliquer_semaine_personnel: 'Semaine dupliquée (personnel)',
+};
+
+// Traduit les valeurs brutes présentes dans le champ "détails"
+const DETAIL_TERMS = {
+  effectue: 'Effectué', programme: 'Programmé', annule: 'Annulé', paye: 'Payé',
+  travail: 'Travail', cp: 'CP', ecole: 'École', ferie: 'Férié', arret: 'Arrêt', repos: 'Repos',
+  statut: 'statut', nb_presents: 'présents',
+};
+
+function prettyDetails(details) {
+  if (!details) return '—';
+  return details.replace(/[a-zA-Zé_]+/g, (w) => DETAIL_TERMS[w] || w);
+}
+
 export default function Settings() {
   const { user: me } = useAuth();
+  const toast = useToast();
   const isManager = me?.role === 'manager';
   const [tab, setTab]     = useState('profil');
   const [users, setUsers] = useState([]);
   const [audit, setAudit] = useState([]);
+  const [auditHasMore, setAuditHasMore] = useState(false);
   const [modal, setModal] = useState(null);
   const [backing, setBacking] = useState(false);
   const [backupError, setBackupError] = useState(null);
 
+  const loadAudit = (offset = 0) => {
+    api.getAuditLog(AUDIT_PAGE, offset).then(rows => {
+      setAudit(prev => offset === 0 ? rows : [...prev, ...rows]);
+      setAuditHasMore(rows.length === AUDIT_PAGE);
+    }).catch(() => {});
+  };
+
   useEffect(() => {
     if (isManager) {
       api.getAppUsers().then(setUsers).catch(() => {});
-      if (tab === 'audit') api.getAuditLog().then(setAudit).catch(() => {});
+      if (tab === 'audit') loadAudit(0);
     }
   }, [isManager, tab]);
 
   async function handleSave(form) {
-    if (modal?.id) await api.updateAppUser(modal.id, form);
-    else           await api.createAppUser(form);
-    api.getAppUsers().then(setUsers);
+    try {
+      if (modal?.id) await api.updateAppUser(modal.id, form);
+      else           await api.createAppUser(form);
+      api.getAppUsers().then(setUsers);
+      toast.success(modal?.id ? 'Profil mis à jour' : 'Profil créé');
+    } catch (e) {
+      toast.error('Échec : ' + e.message);
+      throw e;
+    }
   }
 
   async function handleToggleActif(u) {
-    await api.updateAppUser(u.id, { actif: u.actif ? 0 : 1 });
-    api.getAppUsers().then(setUsers);
+    try {
+      await api.updateAppUser(u.id, { actif: u.actif ? 0 : 1 });
+      api.getAppUsers().then(setUsers);
+    } catch (e) {
+      toast.error('Échec : ' + e.message);
+    }
   }
 
   async function handleBackup() {
@@ -117,8 +159,10 @@ export default function Settings() {
     setBackupError(null);
     try {
       await api.downloadBackup();
+      toast.success('Sauvegarde téléchargée');
     } catch (e) {
       setBackupError(e.message);
+      toast.error('Échec de la sauvegarde : ' + e.message);
     } finally {
       setBacking(false);
     }
@@ -224,28 +268,41 @@ export default function Settings() {
 
       {/* Historique */}
       {tab === 'audit' && isManager && (
-        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <table className="w-full border-collapse text-xs min-w-[560px]">
-            <thead>
-              <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
-                {['Date', 'Utilisateur', 'Action', 'Détails'].map(h => (
-                  <th key={h} className="px-3 py-2 text-left font-medium">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {audit.map((a, i) => (
-                <tr key={a.id} style={{ backgroundColor: i % 2 === 0 ? '#f9fafb' : '#fff' }}>
-                  <td className="px-3 py-2 text-gray-500 whitespace-nowrap">
-                    {parseServerDate(a.created_at).toLocaleString('fr-FR')}
-                  </td>
-                  <td className="px-3 py-2 font-medium">{a.user_nom || '—'}</td>
-                  <td className="px-3 py-2">{a.action}</td>
-                  <td className="px-3 py-2 text-gray-500">{a.details || '—'}</td>
+        <div>
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <table className="w-full border-collapse text-xs min-w-[560px]">
+              <thead>
+                <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
+                  {['Date', 'Utilisateur', 'Action', 'Détails'].map(h => (
+                    <th key={h} className="px-3 py-2 text-left font-medium">{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {audit.map((a, i) => (
+                  <tr key={a.id} style={{ backgroundColor: i % 2 === 0 ? '#f9fafb' : '#fff' }}>
+                    <td className="px-3 py-2 text-gray-500 whitespace-nowrap">
+                      {parseServerDate(a.created_at).toLocaleString('fr-FR')}
+                    </td>
+                    <td className="px-3 py-2 font-medium">{a.user_nom || '—'}</td>
+                    <td className="px-3 py-2">{ACTION_LABELS[a.action] || a.action}</td>
+                    <td className="px-3 py-2 text-gray-500">{prettyDetails(a.details)}</td>
+                  </tr>
+                ))}
+                {audit.length === 0 && (
+                  <tr><td colSpan={4} className="px-3 py-6 text-center text-gray-400 italic">Aucune entrée.</td></tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          {auditHasMore && (
+            <div className="text-center mt-3">
+              <button onClick={() => loadAudit(audit.length)}
+                className="text-sm px-4 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50">
+                Charger plus
+              </button>
+            </div>
+          )}
         </div>
       )}
 

@@ -36,7 +36,7 @@ export const api = {
   getAppUsers:    () => req('/app-users'),
   createAppUser:  (data) => req('/app-users', { method: 'POST', body: JSON.stringify(data) }),
   updateAppUser:  (id, data) => req(`/app-users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-  getAuditLog:    () => req('/app-users/audit'),
+  getAuditLog:    (limit = 200, offset = 0) => req(`/app-users/audit?limit=${limit}&offset=${offset}`),
 
   // Tâches
   getTasks:    (semaine, user_id) => req(`/tasks?semaine=${semaine || ''}${user_id ? `&user_id=${user_id}` : ''}`),

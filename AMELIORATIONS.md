@@ -155,10 +155,12 @@ qui upsert `type=ferie` pour chaque profil actif n'ayant rien ce jour-là. **Eff
 
 ## P3 — Confort, polish, dette
 
-### 15. Toasts d'erreur/succès
-Beaucoup d'appels ont des `.catch(() => {})` silencieux (chargement profils, créneaux, CP…). Créer un
-mini `ToastContext` maison (pas de lib) : provider dans `App.jsx`, hook `useToast()`, affichage en
-bas à droite, auto-dismiss 4s. Brancher au minimum sur les échecs de sauvegarde. **Effort M.**
+### 15. ✅ Toasts d'erreur/succès — CORRIGÉ
+**Solution appliquée.** `client/src/context/ToastContext.jsx` maison (pas de lib) : `ToastProvider` au
+sommet de `App.jsx`, hook `useToast()` exposant `success/error/info`, affichage bas-droite, auto-dismiss
+4s, clic pour fermer, animation `fadeIn` (keyframe dans `index.css`). Branché sur les sauvegardes/
+suppressions explicites (séances, créneaux personnel, profils, sauvegarde DB, duplications) — pas sur
+les micro-actions type clic de statut/effectif (trop bruyant). Vérifié : toast "✓ Créneau enregistré".
 
 ### 16. ✅ Indicateur de notes — CORRIGÉ
 **Solution appliquée.** Un 📝 discret apparaît en coin quand `notes` est non vide : sur `SeanceCard.jsx`
@@ -175,12 +177,13 @@ bas à droite, auto-dismiss 4s. Brancher au minimum sur les échecs de sauvegard
 (importable depuis `client/src/lib/utils.js`) — la bulle n'avait pas la même couleur que dans le
 header et l'écran d'accueil. Corrigé et vérifié par capture d'écran (les deux bulles sont identiques).
 
-### 19. Historique plus lisible
-L'onglet Historique affiche les actions brutes (`switch_profile`, `update_seance`,
-`statut=effectue, nb_presents=12`). Mapper vers des libellés français ("Connexion au profil",
-"Séance modifiée — statut : Effectué, 12 présents"), ajouter un filtre par type d'action et une
-pagination (le serveur limite à 200 : passer à `?limit&offset`). **Fichiers.** `Settings.jsx`,
-`server/src/routes/appUsers.js` (route `/audit`). **Effort M.**
+### 19. ✅ Historique plus lisible — CORRIGÉ
+**Solution appliquée.** `Settings.jsx` : `ACTION_LABELS` mappe les codes vers des libellés français
+("Connexion au profil", "Séance modifiée", …) et `prettyDetails()` traduit les valeurs brutes du champ
+détails (`effectue`→Effectué, `nb_presents`→présents, etc.). Pagination : route `/audit` passe à
+`?limit&offset` (`server/src/routes/appUsers.js`), le client charge 50 lignes puis un bouton
+"Charger plus" appen­d les suivantes. Vérifié en local. **Non fait** (jugé superflu) : filtre par type
+d'action — à ajouter seulement si l'historique devient volumineux et pénible à parcourir.
 
 ### 20. ✅ PWA installable — CORRIGÉ
 **Solution appliquée.** `client/public/manifest.json` (name "Planning Fitnessmov", `display: standalone`,

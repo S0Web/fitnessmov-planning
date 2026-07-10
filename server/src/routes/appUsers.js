@@ -57,15 +57,17 @@ router.put('/:id', requireAuth, (req, res) => {
   res.json(db.get('SELECT id, prenom, nom, email, role, actif FROM app_users WHERE id = ?', [req.params.id]));
 });
 
-// GET /api/app-users/audit — historique (manager)
+// GET /api/app-users/audit?limit&offset — historique (manager), paginé
 router.get('/audit', requireManager, (req, res) => {
+  const limit  = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);
+  const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
   const logs = db.all(`
     SELECT a.*, u.prenom || ' ' || u.nom AS user_nom
     FROM audit_log a
     LEFT JOIN app_users u ON u.id = a.user_id
     ORDER BY a.created_at DESC
-    LIMIT 200
-  `);
+    LIMIT ? OFFSET ?
+  `, [limit, offset]);
   res.json(logs);
 });
 

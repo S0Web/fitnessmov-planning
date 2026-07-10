@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import {
   getLundi, getSemaine, toISO,
   semaineSuivante, semainePrecedente, colorForUser,
@@ -145,6 +146,7 @@ function RecapMensuel() {
 
 export default function PlanningPersonnel() {
   const { user } = useAuth();
+  const toast = useToast();
   const isManager = user?.role === 'manager';
 
   const [lundi, setLundi]     = useState(() => getLundi());
@@ -176,8 +178,14 @@ export default function PlanningPersonnel() {
   useEffect(() => { loadCreneaux(); }, [loadCreneaux]);
 
   async function handleSaveCreneau(payload) {
-    await api.upsertPersonnelCreneau(cellModal.employe.id, cellModal.date, payload);
-    loadCreneaux();
+    try {
+      await api.upsertPersonnelCreneau(cellModal.employe.id, cellModal.date, payload);
+      loadCreneaux();
+      toast.success('Créneau enregistré');
+    } catch (e) {
+      toast.error('Échec de l\'enregistrement : ' + e.message);
+      throw e;
+    }
   }
 
   async function handleDupliquer() {
