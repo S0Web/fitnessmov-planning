@@ -36,15 +36,24 @@ function fmtHeures(totalMinutes) {
 
 function CpSummary({ isManager }) {
   const [cp, setCp] = useState([]);
+  const [annee, setAnnee] = useState(() => new Date().getFullYear());
 
-  useEffect(() => { api.getCpSummary().then(setCp).catch(() => {}); }, []);
-
-  if (cp.length === 0) return null;
+  useEffect(() => { api.getCpSummary(annee).then(setCp).catch(() => {}); }, [annee]);
 
   return (
     <div className="mt-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-xs">
-      <div className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide mb-2">CP pris</div>
-      {isManager ? (
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide">CP pris</span>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setAnnee(a => a - 1)} className="text-gray-400 hover:text-gray-600 px-1">‹</button>
+          <span className="text-gray-600 font-medium tabular-nums">{annee}</span>
+          <button onClick={() => setAnnee(a => a + 1)} disabled={annee >= new Date().getFullYear()}
+            className="text-gray-400 hover:text-gray-600 px-1 disabled:opacity-30">›</button>
+        </div>
+      </div>
+      {cp.length === 0 ? (
+        <p className="text-gray-400 italic">Aucun CP sur {annee}.</p>
+      ) : isManager ? (
         <div className="space-y-1.5">
           {cp.map(c => (
             <div key={c.id} className="flex justify-between items-center text-gray-600">
@@ -63,6 +72,77 @@ function CpSummary({ isManager }) {
   );
 }
 
+const MOIS_COURTS = {
+  '01': 'Jan', '02': 'Fév', '03': 'Mar', '04': 'Avr', '05': 'Mai', '06': 'Jun',
+  '07': 'Jul', '08': 'Aoû', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Déc',
+};
+
+function getLast12Months() {
+  const now = new Date();
+  const months = [];
+  for (let i = 11; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  const debut = months[0] + '-01';
+  const finD  = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  const fin   = `${finD.getFullYear()}-${String(finD.getMonth() + 1).padStart(2, '0')}-${String(finD.getDate()).padStart(2, '0')}`;
+  return { months, debut, fin };
+}
+
+function fmtH(val) {
+  if (!val && val !== 0) return '—';
+  const r = Math.round(val * 100) / 100;
+  return (r % 1 === 0 ? String(r) : r.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')) + 'h';
+}
+
+function RecapMensuel() {
+  const [recap, setRecap] = useState(null);
+  const { months, debut, fin } = useMemo(getLast12Months, []);
+  const currentMois = months[months.length - 1];
+
+  useEffect(() => { api.getPersonnelRecap(debut, fin).then(setRecap).catch(() => {}); }, [debut, fin]);
+
+  if (!recap) return <div className="text-center py-8 text-gray-400 text-sm">Chargement…</div>;
+
+  return (
+    <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-x-auto">
+      <table className="w-full border-collapse text-xs">
+        <thead>
+          <tr>
+            <th className="sticky left-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-2 text-left font-semibold text-gray-500" style={{ minWidth: 140 }}>Employé</th>
+            {months.map(m => (
+              <th key={m} className="border-b border-gray-200 px-2 py-2 text-center font-semibold text-gray-500"
+                style={m === currentMois ? { color: '#0369a1', backgroundColor: '#eef9fd' } : {}}>
+                {MOIS_COURTS[m.slice(5, 7)]}
+              </th>
+            ))}
+            <th className="border-b border-gray-200 px-3 py-2 text-center font-bold text-sky-700">Total</th>
+            <th className="border-b border-gray-200 px-3 py-2 text-center font-semibold text-amber-700">CP (12 mois)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recap.employes.map((e, i) => (
+            <tr key={e.id} style={{ backgroundColor: i % 2 === 0 ? '#fff' : '#f9fafb' }} className={e.actif ? '' : 'opacity-40'}>
+              <td className="sticky left-0 z-10 px-3 py-1.5 font-medium text-gray-700" style={{ backgroundColor: i % 2 === 0 ? '#fff' : '#f9fafb' }}>
+                {e.prenom} {e.nom}
+              </td>
+              {months.map(m => (
+                <td key={m} className="px-2 py-1.5 text-center tabular-nums text-gray-600"
+                  style={m === currentMois ? { backgroundColor: '#eef9fd' } : {}}>
+                  {e.mois[m] ? fmtH(e.mois[m]) : '—'}
+                </td>
+              ))}
+              <td className="px-3 py-1.5 text-center font-bold text-sky-700 tabular-nums">{fmtH(e.total)}</td>
+              <td className="px-3 py-1.5 text-center text-amber-700 tabular-nums">{e.cpTotal || '—'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export default function PlanningPersonnel() {
   const { user } = useAuth();
   const isManager = user?.role === 'manager';
@@ -74,6 +154,7 @@ export default function PlanningPersonnel() {
   const [cellModal, setCellModal] = useState(null); // { employe, date }
   const [dupliquer, setDupliquer] = useState(false);
   const [dupliquerMsg, setDupliquerMsg] = useState(null);
+  const [vue, setVue] = useState('semaine'); // 'semaine' | 'recap'
 
   const semaine = getSemaine(lundi);
 
@@ -153,17 +234,27 @@ export default function PlanningPersonnel() {
             {' – '}
             {semaine[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </span>
-          <button onClick={handleDupliquer} disabled={dupliquer}
-            title="Copie tous les jours de la semaine précédente qui ne sont pas déjà renseignés cette semaine"
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded disabled:opacity-50">
-            {dupliquer ? 'Duplication…' : '⧉ Dupliquer la semaine précédente'}
-          </button>
+          {vue === 'semaine' && (
+            <button onClick={handleDupliquer} disabled={dupliquer}
+              title="Copie tous les jours de la semaine précédente qui ne sont pas déjà renseignés cette semaine"
+              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded disabled:opacity-50">
+              {dupliquer ? 'Duplication…' : '⧉ Dupliquer la semaine précédente'}
+            </button>
+          )}
+          {isManager && (
+            <button onClick={() => setVue(v => v === 'semaine' ? 'recap' : 'semaine')}
+              className={`${vue === 'semaine' ? 'ml-auto' : ''} px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded`}>
+              {vue === 'semaine' ? '📊 Récap mensuel' : '← Retour à la semaine'}
+            </button>
+          )}
         </div>
-        {dupliquerMsg && (
+        {dupliquerMsg && vue === 'semaine' && (
           <p className="text-xs text-gray-400 -mt-2 mb-3">{dupliquerMsg}</p>
         )}
 
-        {loading ? (
+        {vue === 'recap' && isManager ? (
+          <RecapMensuel />
+        ) : loading ? (
           <div className="text-center py-10 text-gray-400 text-sm">Chargement…</div>
         ) : rows.length === 0 ? (
           <p className="text-sm text-gray-400 py-10 text-center">Aucun profil — ajoute-en un depuis l'écran d'accueil.</p>

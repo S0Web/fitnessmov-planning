@@ -35,24 +35,77 @@ router.get('/', (req, res) => {
   res.json(rows);
 });
 
-// GET /api/personnel-creneaux/cp-summary — nombre de CP pris (manager: tout le monde, sinon: soi-même)
+// GET /api/personnel-creneaux/cp-summary?annee=YYYY — nombre de CP pris sur l'année
+// (manager: tout le monde, sinon: soi-même). Année par défaut : année en cours.
 router.get('/cp-summary', (req, res) => {
+  const annee = req.query.annee || String(new Date().getFullYear());
   if (req.user.role === 'manager') {
     const rows = db.all(`
       SELECT u.id, u.prenom, u.nom, COUNT(*) as cp
       FROM personnel_creneaux pc
       JOIN app_users u ON u.id = pc.employe_id
-      WHERE pc.type = 'cp' AND u.actif = 1
+      WHERE pc.type = 'cp' AND u.actif = 1 AND strftime('%Y', pc.date) = ?
       GROUP BY u.id
       ORDER BY u.prenom
-    `);
+    `, [annee]);
     return res.json(rows);
   }
   const row = db.get(
-    `SELECT COUNT(*) as cp FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp'`,
-    [req.user.id]
+    `SELECT COUNT(*) as cp FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp' AND strftime('%Y', date) = ?`,
+    [req.user.id, annee]
   );
   res.json([{ id: req.user.id, prenom: req.user.prenom, nom: req.user.nom, cp: row.cp }]);
+});
+
+// GET /api/personnel-creneaux/recap?debut&fin — heures travaillées + CP par employé par mois
+// (aide paie). Manager : tout le monde. Sinon : seulement soi-même.
+router.get('/recap', (req, res) => {
+  const now = new Date();
+  const defaultFin   = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-28`;
+  const d12          = new Date(now.getFullYear(), now.getMonth() - 11, 1);
+  const defaultDebut = `${d12.getFullYear()}-${String(d12.getMonth()+1).padStart(2,'0')}-01`;
+  const debut = req.query.debut || defaultDebut;
+  const fin   = req.query.fin   || defaultFin;
+
+  const isManager = req.user.role === 'manager';
+  const employes = isManager
+    ? db.all('SELECT id, prenom, nom, actif FROM app_users ORDER BY prenom, nom')
+    : db.all('SELECT id, prenom, nom, actif FROM app_users WHERE id = ?', [req.user.id]);
+
+  const rows = db.all(
+    `SELECT employe_id, date, type, debut, fin FROM personnel_creneaux
+     WHERE date BETWEEN ? AND ? AND employe_id IN (${employes.map(() => '?').join(',') || 'NULL'})`,
+    [debut, fin, ...employes.map(e => e.id)]
+  );
+
+  const toMin = (hhmm) => { const [h, m] = hhmm.split(':').map(Number); return h * 60 + m; };
+  const map = {};
+  for (const e of employes) map[e.id] = { ...e, mois: {}, total: 0, cpMois: {}, cpTotal: 0 };
+
+  for (const r of rows) {
+    const employe = map[r.employe_id];
+    if (!employe) continue;
+    const mois = r.date.slice(0, 7);
+    if (r.type === 'travail' && r.debut && r.fin) {
+      const heures = (toMin(r.fin) - toMin(r.debut)) / 60;
+      employe.mois[mois] = (employe.mois[mois] || 0) + heures;
+      employe.total += heures;
+    } else if (r.type === 'cp') {
+      employe.cpMois[mois] = (employe.cpMois[mois] || 0) + 1;
+      employe.cpTotal += 1;
+    }
+  }
+
+  const round2 = (n) => Math.round(n * 100) / 100;
+  const result = Object.values(map)
+    .map(e => ({
+      ...e,
+      total: round2(e.total),
+      mois: Object.fromEntries(Object.entries(e.mois).map(([k, v]) => [k, round2(v)])),
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  res.json({ employes: result });
 });
 
 // POST /api/personnel-creneaux/dupliquer — copie une semaine vers une autre, tous employés confondus,

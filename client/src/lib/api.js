@@ -70,7 +70,8 @@ export const api = {
 
   // Créneaux personnel
   getPersonnelCreneaux:   (semaine) => req(`/personnel-creneaux?semaine=${semaine}`),
-  getCpSummary:           () => req('/personnel-creneaux/cp-summary'),
+  getCpSummary:           (annee) => req(`/personnel-creneaux/cp-summary${annee ? `?annee=${annee}` : ''}`),
+  getPersonnelRecap:      (debut, fin) => req(`/personnel-creneaux/recap?debut=${debut}&fin=${fin}`),
   upsertPersonnelCreneau: (employeId, date, data) =>
     req(`/personnel-creneaux/${employeId}/${date}`, { method: 'PUT', body: JSON.stringify(data) }),
   dupliquerSemainePersonnel: (semaine_source, semaine_cible) =>

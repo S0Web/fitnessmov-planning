@@ -121,12 +121,14 @@ Bouton "⬇ Télécharger une sauvegarde" dans Paramètres > Utilisateurs. Véri
 téléchargé valide (reconnu comme base SQLite), taille et compteur de fichier identiques à la base
 source au moment du téléchargement.
 
-### 11. Récap mensuel des heures du personnel (aide paie)
-Équivalent du récap coachs mais pour les employés : total d'heures `travail` par employé par mois
-(+ nb de jours CP par mois). Route `GET /api/personnel-creneaux/recap?debut&fin` avec
-`SUM((strftime('%s', fin) - strftime('%s', debut))/60)` groupé par employé/mois — ou plus simple,
-calculer en JS après un SELECT brut. Affichage : section sous le tableau hebdo ou onglet dédié.
-**Effort M.**
+### 11. ✅ Récap mensuel des heures du personnel (aide paie) — CORRIGÉ
+Équivalent du récap coachs mais pour les employés. **Solution appliquée.**
+`GET /api/personnel-creneaux/recap?debut&fin` (`personnelCreneaux.js`) : agrège en JS (les colonnes
+`debut`/`fin` sont des heures `HH:MM` sans date, pas exploitables par `strftime` SQL) le total
+d'heures `travail` et le nombre de jours `cp` par employé et par mois, sur 12 mois. Manager : tout le
+monde ; sinon : soi-même uniquement. Bouton "📊 Récap mensuel" dans `PlanningPersonnel.jsx` (visible
+manager uniquement) qui bascule la vue hebdo vers ce tableau (mois en colonnes, employés en lignes,
+triés par total décroissant, profils inactifs grisés). Vérifié en local avec des données réelles.
 
 ### 12. ✅ Déplacer une séance de cours (champ date manquant) — CORRIGÉ
 Le `PATCH /api/seances/:id` acceptait déjà `date`, mais `SeanceModal.jsx` n'avait pas de champ date →
@@ -135,11 +137,12 @@ impossible de déplacer une séance sans la supprimer/recréer. **Solution appli
 la date vient de la cellule cliquée). Vérifié en local : une séance du jeudi 9 déplacée au samedi 11
 disparaît bien de jeudi et apparaît sur samedi après enregistrement.
 
-### 13. Compteur de CP par année
-`GET /api/personnel-creneaux/cp-summary` additionne tout l'historique — or les CP se comptent par
-année. Ajouter un paramètre `?annee=2026` (défaut : année en cours) avec
-`WHERE strftime('%Y', pc.date) = ?`, et un petit sélecteur d'année dans le composant `CpSummary`
-de `PlanningPersonnel.jsx`. **Effort S.**
+### 13. ✅ Compteur de CP par année — CORRIGÉ
+`GET /api/personnel-creneaux/cp-summary` additionnait tout l'historique — or les CP se comptent par
+année. **Solution appliquée.** Paramètre `?annee=2026` (défaut : année en cours) avec
+`WHERE strftime('%Y', pc.date) = ?`, sélecteur d'année (‹ / ›, année suivante désactivée si future)
+ajouté dans `CpSummary` (`PlanningPersonnel.jsx`). Vérifié en local : les totaux changent bien en
+changeant d'année (ex. Selim : 23 CP en 2026, 17 en 2025).
 
 ### 14. Férié pour tous en un clic *(idée écartée par l'utilisateur le 9/7 — ne faire que sur demande)*
 Version simple si redemandée : au clic sur l'en-tête d'un jour, petit menu "Marquer férié pour tous"
