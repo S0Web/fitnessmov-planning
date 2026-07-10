@@ -157,6 +157,7 @@ export default function PlanningPersonnel() {
   const [dupliquer, setDupliquer] = useState(false);
   const [dupliquerMsg, setDupliquerMsg] = useState(null);
   const [vue, setVue] = useState('semaine'); // 'semaine' | 'recap'
+  const [showAddEmploye, setShowAddEmploye] = useState(false);
 
   const semaine = getSemaine(lundi);
 
@@ -189,6 +190,7 @@ export default function PlanningPersonnel() {
   }
 
   async function handleDupliquer() {
+    if (!confirm('Copier le planning de la semaine précédente vers cette semaine ?\n\n(Les jours déjà renseignés ne sont pas touchés.)')) return;
     setDupliquer(true);
     setDupliquerMsg(null);
     try {
@@ -270,15 +272,17 @@ export default function PlanningPersonnel() {
           <p className="text-sm text-gray-400 py-10 text-center">Aucun profil — ajoute-en un depuis l'écran d'accueil.</p>
         ) : (
           <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-x-auto md:overflow-visible">
-            <table className="w-full border-collapse table-fixed text-sm min-w-[760px]">
+            <table className="w-full border-collapse table-fixed text-sm min-w-[800px]">
               <colgroup>
-                <col style={{ width: '150px' }} />
+                <col style={{ width: '44px' }} />
+                <col style={{ width: '132px' }} />
                 {semaine.map((_, i) => <col key={i} />)}
                 <col style={{ width: '68px' }} />
               </colgroup>
               <thead>
                 <tr>
-                  <th className="z-20 bg-gray-50 border-b border-gray-200 rounded-tl-xl p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                  <th className="sticky left-0 z-10 bg-gray-50 border-b border-gray-200 rounded-tl-xl" />
+                  <th className="z-20 bg-gray-50 border-b border-gray-200 p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
                     Employé
                   </th>
                   {semaine.map((date) => {
@@ -308,16 +312,16 @@ export default function PlanningPersonnel() {
 
                   return (
                     <tr key={emp.id} className="group/row hover:bg-gray-50/60 transition-colors">
-                      <td className="sticky left-0 z-10 bg-white group-hover/row:bg-gray-50/60 border-r border-gray-100 px-3 py-2 align-middle transition-colors">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className="h-6 w-6 flex-shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
-                            style={{ backgroundColor: colorForUser(emp.id) }}
-                          >
-                            {emp.prenom?.[0]}{emp.nom?.[0]}
-                          </span>
-                          <span className="font-medium text-gray-700 truncate">{emp.prenom} {emp.nom}</span>
-                        </div>
+                      <td className="sticky left-0 z-10 bg-white group-hover/row:bg-gray-50/60 pl-3 align-middle transition-colors">
+                        <span
+                          className="h-6 w-6 flex-shrink-0 rounded-full flex items-center justify-center text-white text-[10px] font-bold"
+                          style={{ backgroundColor: colorForUser(emp.id) }}
+                        >
+                          {emp.prenom?.[0]}{emp.nom?.[0]}
+                        </span>
+                      </td>
+                      <td className="bg-white group-hover/row:bg-gray-50/60 border-r border-gray-100 pr-3 py-2 align-middle transition-colors">
+                        <span className="font-medium text-gray-700 truncate block">{emp.prenom} {emp.nom}</span>
                       </td>
                       {semaine.map(date => {
                         const iso = toISO(date);
@@ -362,6 +366,16 @@ export default function PlanningPersonnel() {
                     </tr>
                   );
                 })}
+                {/* Ajouter un employé — discret (l'ajout principal reste dans Paramètres > Utilisateurs) */}
+                <tr>
+                  <td colSpan={9} className="sticky left-0 bg-white">
+                    <button onClick={() => setShowAddEmploye(true)}
+                      className="flex items-center gap-1.5 pl-3 py-1.5 text-xs text-gray-400 hover:text-sky-600 transition-colors">
+                      <span className="text-base leading-none">+</span> employé
+                    </button>
+                  </td>
+                  <td className="bg-white" />
+                </tr>
               </tbody>
             </table>
           </div>
@@ -377,6 +391,61 @@ export default function PlanningPersonnel() {
           onClose={() => setCellModal(null)}
         />
       )}
+
+      {showAddEmploye && (
+        <AddEmployeModal
+          onClose={() => setShowAddEmploye(false)}
+          onCreated={() => { setShowAddEmploye(false); loadProfils(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function AddEmployeModal({ onClose, onCreated }) {
+  const toast = useToast();
+  const [form, setForm] = useState({ prenom: '', nom: '' });
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function submit(e) {
+    e.preventDefault();
+    if (!form.prenom.trim()) return;
+    setSaving(true); setError(null);
+    try {
+      await api.createProfile({ prenom: form.prenom.trim(), nom: form.nom.trim() });
+      toast.success('Employé ajouté');
+      onCreated();
+    } catch (err) {
+      setError(err.message);
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+        <h2 className="text-sm font-bold text-gray-700 mb-3">Nouvel employé</h2>
+        <form onSubmit={submit} className="space-y-3">
+          {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">{error}</div>}
+          <div className="grid grid-cols-2 gap-2">
+            <input placeholder="Prénom *" required autoFocus value={form.prenom}
+              onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))}
+              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+            <input placeholder="Nom" value={form.nom}
+              onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
+              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 border border-gray-300 text-gray-600 rounded-lg py-2 text-sm hover:bg-gray-50">Annuler</button>
+            <button type="submit" disabled={saving}
+              className="flex-1 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50" style={{ backgroundColor: '#2fa8cc' }}>
+              {saving ? 'Création…' : 'Créer'}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
