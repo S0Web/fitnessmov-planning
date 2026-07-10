@@ -72,6 +72,8 @@ export default function PlanningPersonnel() {
   const [creneaux, setCreneaux] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cellModal, setCellModal] = useState(null); // { employe, date }
+  const [dupliquer, setDupliquer] = useState(false);
+  const [dupliquerMsg, setDupliquerMsg] = useState(null);
 
   const semaine = getSemaine(lundi);
 
@@ -95,6 +97,25 @@ export default function PlanningPersonnel() {
   async function handleSaveCreneau(payload) {
     await api.upsertPersonnelCreneau(cellModal.employe.id, cellModal.date, payload);
     loadCreneaux();
+  }
+
+  async function handleDupliquer() {
+    setDupliquer(true);
+    setDupliquerMsg(null);
+    try {
+      const source = toISO(semainePrecedente(lundi));
+      const { copies, ignores } = await api.dupliquerSemainePersonnel(source, toISO(lundi));
+      await loadCreneaux();
+      setDupliquerMsg(
+        copies === 0
+          ? 'Rien à copier (semaine précédente vide ou déjà tout renseigné).'
+          : `${copies} jour(s) copié(s)${ignores ? `, ${ignores} déjà renseigné(s) conservé(s)` : ''}.`
+      );
+    } catch (e) {
+      setDupliquerMsg('Erreur : ' + e.message);
+    } finally {
+      setDupliquer(false);
+    }
   }
 
   const today = toISO(new Date());
@@ -132,7 +153,15 @@ export default function PlanningPersonnel() {
             {' – '}
             {semaine[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </span>
+          <button onClick={handleDupliquer} disabled={dupliquer}
+            title="Copie tous les jours de la semaine précédente qui ne sont pas déjà renseignés cette semaine"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded disabled:opacity-50">
+            {dupliquer ? 'Duplication…' : '⧉ Dupliquer la semaine précédente'}
+          </button>
         </div>
+        {dupliquerMsg && (
+          <p className="text-xs text-gray-400 -mt-2 mb-3">{dupliquerMsg}</p>
+        )}
 
         {loading ? (
           <div className="text-center py-10 text-gray-400 text-sm">Chargement…</div>

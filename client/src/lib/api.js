@@ -73,4 +73,6 @@ export const api = {
   getCpSummary:           () => req('/personnel-creneaux/cp-summary'),
   upsertPersonnelCreneau: (employeId, date, data) =>
     req(`/personnel-creneaux/${employeId}/${date}`, { method: 'PUT', body: JSON.stringify(data) }),
+  dupliquerSemainePersonnel: (semaine_source, semaine_cible) =>
+    req('/personnel-creneaux/dupliquer', { method: 'POST', body: JSON.stringify({ semaine_source, semaine_cible }) }),
 };

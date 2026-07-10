@@ -69,13 +69,13 @@ nouvelle installation n'aura que les 8 cours aqua.
 distinct gère la vraie suppression, avec un `confirm()` explicite nommant le pointeur. Vérifié : après
 clic sur ✕, le pointeur reste bien présent en base.
 
-### 6. Navbar : débordement sur mobile
+### 6. Navbar : débordement sur mobile — REPOUSSÉ (voir note ci-dessous)
 **Problème.** `Layout.jsx` : marque + 4 onglets + bulle profil sur une seule ligne h-14 → déborde
 sous ~700px, pas de menu burger.
 **Solution.** Sous `md:` afficher un bouton burger qui ouvre les liens en panneau déroulant ; garder
 la bulle profil visible. **Fichier.** `client/src/components/Layout.jsx`. **Effort M.**
 
-### 7. Tableaux non scrollables sur mobile
+### 7. Tableaux non scrollables sur mobile — REPOUSSÉ (voir note ci-dessous)
 **Problème.** Les grilles (Planning cours, Planning personnel, récap Coaches 12 mois) débordent de
 l'écran sans scroll horizontal propre.
 **Solution.** Envelopper chaque `<table>` dans `<div className="overflow-x-auto">`. Attention :
@@ -83,18 +83,26 @@ les `sticky top-14` des thead ne fonctionnent plus dans un conteneur à overflow
 compromis sur mobile seulement, ou passer les th en `sticky left-0` pour la 1re colonne uniquement.
 **Fichiers.** `Planning.jsx`, `PlanningPersonnel.jsx`, `Coaches.jsx`. **Effort S/M.**
 
+**Note du 9/7/2026 :** l'utilisateur a testé sur mobile (largeur réduite) et confirmé que l'app est
+globalement "impilotable" sur petit écran, pas seulement la navbar/les tableaux pris isolément
+(texte minuscule, colonnes tassées, cellules illisibles). Décision : ne pas corriger la navbar et
+les tableaux séparément — traiter tout le responsive mobile en un seul lot dédié, à la fin, une fois
+les autres points de cette liste traités. Ne pas reprendre les points 6/7 isolément sans redemande.
+
 ---
 
 ## P2 — Fonctionnalités à forte valeur métier
 
-### 8. Dupliquer la semaine précédente (planning personnel)
+### 8. ✅ Dupliquer la semaine précédente (planning personnel) — CORRIGÉ
 Le planning du personnel se répète largement d'une semaine à l'autre (c'était visible dans le PDF
-source). Même mécanique que pour les cours : route `POST /api/personnel-creneaux/dupliquer`
-`{ semaine_source, semaine_cible }` qui copie tous les jours de tous les employés en **sautant** les
-jours déjà renseignés dans la cible (réutiliser `upsertJour` de `server/src/db/personnelWrite.js` et
-le calcul de décalage de dates de `seances.js /dupliquer`). Bouton "⧉ Dupliquer la semaine précédente"
-dans la barre d'en-tête de `PlanningPersonnel.jsx` (pas seulement quand la semaine est vide : proposer
-toujours, puisque les jours remplis sont préservés). **Effort M. Très gros gain de saisie.**
+source). **Solution appliquée.** Route `POST /api/personnel-creneaux/dupliquer`
+`{ semaine_source, semaine_cible }` (`server/src/routes/personnelCreneaux.js`) qui regroupe les
+créneaux source par employé + jour puis copie chaque jour en **sautant** ceux déjà renseignés dans
+la cible (réutilise `upsertJour` de `personnelWrite.js`). Bouton "⧉ Dupliquer la semaine précédente"
+toujours visible dans l'en-tête de `PlanningPersonnel.jsx` (pas seulement semaine vide), avec message
+de résultat ("X jour(s) copié(s), Y déjà renseigné(s) conservé(s)"). Vérifié en local : un jour vide
+est bien copié, un jour déjà rempli (test avec une valeur "FÉRIÉ" volontairement différente) reste
+inchangé après duplication.
 
 ### 9. Impression de la semaine avec colonnes signatures
 La salle imprimait le planning pour signature (colonnes "Signature du salarié / du responsable" dans
