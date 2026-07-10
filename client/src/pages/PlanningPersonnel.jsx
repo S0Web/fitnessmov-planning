@@ -107,7 +107,7 @@ function RecapMensuel() {
 
   return (
     <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-x-auto">
-      <table className="w-full border-collapse text-xs">
+      <table className="w-full border-collapse text-xs min-w-[760px]">
         <thead>
           <tr>
             <th className="sticky left-0 z-10 bg-gray-50 border-b border-gray-200 px-3 py-2 text-left font-semibold text-gray-500" style={{ minWidth: 140 }}>Employé</th>
@@ -234,19 +234,21 @@ export default function PlanningPersonnel() {
             {' – '}
             {semaine[6].toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
           </span>
-          {vue === 'semaine' && (
-            <button onClick={handleDupliquer} disabled={dupliquer}
-              title="Copie tous les jours de la semaine précédente qui ne sont pas déjà renseignés cette semaine"
-              className="ml-auto flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded disabled:opacity-50">
-              {dupliquer ? 'Duplication…' : '⧉ Dupliquer la semaine précédente'}
-            </button>
-          )}
-          {isManager && (
-            <button onClick={() => setVue(v => v === 'semaine' ? 'recap' : 'semaine')}
-              className={`${vue === 'semaine' ? 'ml-auto' : ''} px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded`}>
-              {vue === 'semaine' ? '📊 Récap mensuel' : '← Retour à la semaine'}
-            </button>
-          )}
+          <div className="w-full sm:w-auto sm:ml-auto flex flex-wrap gap-2">
+            {vue === 'semaine' && (
+              <button onClick={handleDupliquer} disabled={dupliquer}
+                title="Copie tous les jours de la semaine précédente qui ne sont pas déjà renseignés cette semaine"
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded disabled:opacity-50">
+                {dupliquer ? 'Duplication…' : '⧉ Dupliquer la semaine précédente'}
+              </button>
+            )}
+            {isManager && (
+              <button onClick={() => setVue(v => v === 'semaine' ? 'recap' : 'semaine')}
+                className="px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">
+                {vue === 'semaine' ? '📊 Récap mensuel' : '← Retour à la semaine'}
+              </button>
+            )}
+          </div>
         </div>
         {dupliquerMsg && vue === 'semaine' && (
           <p className="text-xs text-gray-400 -mt-2 mb-3">{dupliquerMsg}</p>
@@ -259,8 +261,8 @@ export default function PlanningPersonnel() {
         ) : rows.length === 0 ? (
           <p className="text-sm text-gray-400 py-10 text-center">Aucun profil — ajoute-en un depuis l'écran d'accueil.</p>
         ) : (
-          <div className="border border-gray-200 rounded-xl bg-white shadow-sm">
-            <table className="w-full border-collapse table-fixed text-sm">
+          <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-x-auto md:overflow-visible">
+            <table className="w-full border-collapse table-fixed text-sm min-w-[760px]">
               <colgroup>
                 <col style={{ width: '150px' }} />
                 {semaine.map((_, i) => <col key={i} />)}
@@ -268,14 +270,14 @@ export default function PlanningPersonnel() {
               </colgroup>
               <thead>
                 <tr>
-                  <th className="sticky top-14 z-20 bg-gray-50 border-b border-gray-200 rounded-tl-xl p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
+                  <th className="static md:sticky md:top-14 z-20 bg-gray-50 border-b border-gray-200 rounded-tl-xl p-3 text-left text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
                     Employé
                   </th>
                   {semaine.map((date) => {
                     const iso = toISO(date);
                     const isToday = iso === today;
                     return (
-                      <th key={iso} className={`sticky top-14 z-20 border-b border-gray-200 p-1.5 text-center ${isToday ? 'bg-sky-50' : 'bg-gray-50'}`}>
+                      <th key={iso} className={`static md:sticky md:top-14 z-20 border-b border-gray-200 p-1.5 text-center ${isToday ? 'bg-sky-50' : 'bg-gray-50'}`}>
                         <div className={`text-[10px] font-semibold uppercase tracking-wide ${isToday ? 'text-sky-500' : 'text-gray-400'}`}>
                           {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
                         </div>
@@ -285,7 +287,7 @@ export default function PlanningPersonnel() {
                       </th>
                     );
                   })}
-                  <th className="sticky top-14 z-20 bg-sky-50 border-b border-gray-200 rounded-tr-xl p-2 text-center text-[11px] font-bold text-sky-700 uppercase tracking-wide">
+                  <th className="static md:sticky md:top-14 z-20 bg-sky-50 border-b border-gray-200 rounded-tr-xl p-2 text-center text-[11px] font-bold text-sky-700 uppercase tracking-wide">
                     Total
                   </th>
                 </tr>

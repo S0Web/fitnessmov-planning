@@ -45,8 +45,8 @@ const ROWS = [
 
 function VueGrille({ semaine, seances, loading, today, onOpenCard, onPatch, onDelete, onAdd }) {
   return (
-    <div>
-      <table className="w-full border-collapse table-fixed">
+    <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+      <table className="w-full border-collapse table-fixed min-w-[860px]">
         <colgroup>
           <col style={{ width: '72px' }} />
           {semaine.map((_, i) => <col key={i} />)}
@@ -54,12 +54,12 @@ function VueGrille({ semaine, seances, loading, today, onOpenCard, onPatch, onDe
 
         <thead>
           <tr>
-            <th className="sticky top-14 z-20 bg-gray-100 border border-gray-300 p-0" />
+            <th className="static md:sticky md:top-14 z-20 bg-gray-100 border border-gray-300 p-0" />
             {semaine.map((date) => {
               const iso = toISO(date);
               const isToday = iso === today;
               return (
-                <th key={iso} className={`sticky top-14 z-20 border border-gray-300 p-0 text-center ${isToday ? 'bg-sky-600' : 'bg-gray-100'}`}>
+                <th key={iso} className={`static md:sticky md:top-14 z-20 border border-gray-300 p-0 text-center ${isToday ? 'bg-sky-600' : 'bg-gray-100'}`}>
                   <div className={`px-1 py-1.5 ${isToday ? 'text-white' : 'text-gray-700'}`}>
                     <div className={`text-[10px] font-bold uppercase tracking-wide ${isToday ? 'text-sky-100' : 'text-gray-400'}`}>
                       {date.toLocaleDateString('fr-FR', { weekday: 'short' })}
@@ -134,11 +134,11 @@ function VueListe({ seances, loading, onOpenCard, onPatch, onDelete }) {
     return acc;
   }, {});
 
-  const TH = 'sticky top-14 z-20 bg-gray-100 px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wide border border-gray-200';
+  const TH = 'static md:sticky md:top-14 z-20 bg-gray-100 px-3 py-2 text-xs font-bold text-gray-500 uppercase tracking-wide border border-gray-200';
 
   return (
-    <div>
-      <table className="w-full border-collapse text-sm">
+    <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+      <table className="w-full border-collapse text-sm min-w-[720px]">
         <thead>
           <tr>
             <th className={`${TH} text-left`}>Horaire</th>

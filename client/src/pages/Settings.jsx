@@ -177,7 +177,8 @@ export default function Settings() {
               + Nouveau
             </button>
           </div>
-          <table className="w-full border-collapse text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <table className="w-full border-collapse text-sm min-w-[520px]">
             <thead>
               <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
                 {['Nom', 'Email', 'Rôle', 'Statut', ''].map(h => (
@@ -205,8 +206,9 @@ export default function Settings() {
               ))}
             </tbody>
           </table>
+          </div>
 
-          <div className="mt-4 bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
+          <div className="mt-4 bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
               <div className="text-sm font-semibold text-gray-700">Sauvegarde de la base</div>
               <div className="text-xs text-gray-500 mt-0.5">Télécharge une copie complète du fichier de données.</div>
@@ -222,8 +224,8 @@ export default function Settings() {
 
       {/* Historique */}
       {tab === 'audit' && isManager && (
-        <div>
-          <table className="w-full border-collapse text-xs">
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <table className="w-full border-collapse text-xs min-w-[560px]">
             <thead>
               <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
                 {['Date', 'Utilisateur', 'Action', 'Détails'].map(h => (

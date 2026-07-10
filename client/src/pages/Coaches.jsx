@@ -244,7 +244,7 @@ export default function Coaches() {
     grandTotal += c.total || 0;
   }
 
-  const TH = 'sticky top-14 z-20 bg-gray-100 px-2 py-2 text-xs font-bold text-gray-600 uppercase border border-gray-200 text-center whitespace-nowrap';
+  const TH = 'static md:sticky md:top-14 z-20 bg-gray-100 px-2 py-2 text-xs font-bold text-gray-600 uppercase border border-gray-200 text-center whitespace-nowrap';
 
   const kpi    = dashboard?.kpi    || {};
   const mensuel = dashboard?.mensuel || [];
@@ -260,7 +260,7 @@ export default function Coaches() {
       ════════════════════════════════════════════════════════════ */}
 
       <div>
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
           <div>
             <h1 className="text-lg font-bold text-gray-800">Récapitulatif des heures effectuées</h1>
             <p className="text-xs text-gray-400 mt-0.5">12 derniers mois · Statut « Effectué » uniquement</p>
@@ -281,7 +281,8 @@ export default function Coaches() {
         {loading ? (
           <div className="text-center py-10 text-gray-400 text-sm">Chargement…</div>
         ) : (
-          <table className="w-full border-collapse text-sm">
+          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <table className="w-full border-collapse text-sm min-w-[860px]">
             <thead>
               <tr>
                 <th className={`${TH} text-left sticky left-0 z-30 bg-gray-100`} style={{ minWidth: 130 }}>Coach</th>
@@ -337,6 +338,7 @@ export default function Coaches() {
               </tr>
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -352,7 +354,7 @@ export default function Coaches() {
           </h2>
 
           {/* KPI cards */}
-          <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
             <div className="border-2 rounded-lg p-5 text-center" style={{ borderColor: '#5bcae8', backgroundColor: '#eef9fd' }}>
               <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Cours programmés</div>
               <div className="text-4xl font-extrabold" style={{ color: '#1a7a9b' }}>{kpi.total ?? '—'}</div>
@@ -368,11 +370,11 @@ export default function Coaches() {
           </div>
 
           {/* Tableau mensuel + graphique */}
-          <div className="grid grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Tableau fréquentation mensuelle */}
-            <div>
+            <div className="overflow-x-auto">
               <h3 className="text-sm font-bold text-gray-700 mb-2">Fréquentation mensuelle</h3>
-              <table className="w-full border-collapse text-xs">
+              <table className="w-full border-collapse text-xs min-w-[520px]">
                 <thead>
                   <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
                     {['Mois','Prog.','Effect.','Annulés','Annul. %','Effectif','Moy.','Heures'].map((h, i) => (
@@ -421,10 +423,10 @@ export default function Coaches() {
           </div>
 
           {/* Top cours + Top coachs */}
-          <div className="grid grid-cols-2 gap-6">
-            <div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="overflow-x-auto">
               <h3 className="text-sm font-bold text-gray-700 mb-2">Top Cours</h3>
-              <table className="w-full border-collapse text-xs">
+              <table className="w-full border-collapse text-xs min-w-[360px]">
                 <thead>
                   <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
                     {['Cours','Séances','Participants','Moyenne'].map((h, i) => (
@@ -445,9 +447,9 @@ export default function Coaches() {
               </table>
             </div>
 
-            <div>
+            <div className="overflow-x-auto">
               <h3 className="text-sm font-bold text-gray-700 mb-2">Top Coachs</h3>
-              <table className="w-full border-collapse text-xs">
+              <table className="w-full border-collapse text-xs min-w-[360px]">
                 <thead>
                   <tr style={{ backgroundColor: '#c9a464', color: '#fff' }}>
                     {['Coach','Heures','Séances','Moy. présents'].map((h, i) => (

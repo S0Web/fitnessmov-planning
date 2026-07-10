@@ -69,25 +69,28 @@ nouvelle installation n'aura que les 8 cours aqua.
 distinct gère la vraie suppression, avec un `confirm()` explicite nommant le pointeur. Vérifié : après
 clic sur ✕, le pointeur reste bien présent en base.
 
-### 6. Navbar : débordement sur mobile — REPOUSSÉ (voir note ci-dessous)
-**Problème.** `Layout.jsx` : marque + 4 onglets + bulle profil sur une seule ligne h-14 → déborde
-sous ~700px, pas de menu burger.
-**Solution.** Sous `md:` afficher un bouton burger qui ouvre les liens en panneau déroulant ; garder
-la bulle profil visible. **Fichier.** `client/src/components/Layout.jsx`. **Effort M.**
+### 6. ✅ Navbar : débordement sur mobile — CORRIGÉ (lot responsive du 10/7/2026)
+**Problème.** `Layout.jsx` : marque + 4 onglets + bulle profil sur une seule ligne → débordait sous
+~700px, poussant TOUTE la page hors écran (cause racine du décalage horizontal de Coaches/Settings).
+**Solution appliquée.** Sous `md:`, les onglets inline + la bulle profil sont masqués (`hidden md:flex`)
+au profit d'un bouton burger (`md:hidden`) qui ouvre un panneau déroulant avec les 4 liens + un bouton
+"Changer de profil (Prénom)". Au-dessus de `md`, comportement inchangé.
 
-### 7. Tableaux non scrollables sur mobile — REPOUSSÉ (voir note ci-dessous)
-**Problème.** Les grilles (Planning cours, Planning personnel, récap Coaches 12 mois) débordent de
-l'écran sans scroll horizontal propre.
-**Solution.** Envelopper chaque `<table>` dans `<div className="overflow-x-auto">`. Attention :
-les `sticky top-14` des thead ne fonctionnent plus dans un conteneur à overflow — accepter ce
-compromis sur mobile seulement, ou passer les th en `sticky left-0` pour la 1re colonne uniquement.
-**Fichiers.** `Planning.jsx`, `PlanningPersonnel.jsx`, `Coaches.jsx`. **Effort S/M.**
+### 7. ✅ Tableaux non scrollables sur mobile — CORRIGÉ (lot responsive du 10/7/2026)
+**Problème.** Les grilles (Planning cours, Planning personnel, récap Coaches, tables Settings)
+débordaient sans scroll horizontal → cellules tassées et illisibles ("impilotable" sur téléphone).
+**Solution appliquée.** Chaque `<table>` large est enveloppée dans `overflow-x-auto` avec un `min-w-[…]`
+donnant à chaque colonne une largeur lisible (le tableau scrolle horizontalement au lieu de s'écraser).
+La 1re colonne reste en `sticky left-0` pour garder le contexte (jour/employé/coach). Le conflit
+sticky-thead ↔ overflow est résolu en passant les en-têtes de `sticky top-14` à `static md:sticky
+md:top-14` : pas de sticky vertical sur mobile (où il casserait), conservé sur desktop. Les grilles
+KPI de Coaches passent de `grid-cols-3`/`grid-cols-2` à empilées sur mobile.
+**Fichiers.** `Layout.jsx`, `Planning.jsx`, `PlanningPersonnel.jsx`, `Coaches.jsx`, `Settings.jsx`.
+Vérifié par captures d'écran à 390px (mobile) et 1280px (desktop, aucune régression du sticky).
 
-**Note du 9/7/2026 :** l'utilisateur a testé sur mobile (largeur réduite) et confirmé que l'app est
-globalement "impilotable" sur petit écran, pas seulement la navbar/les tableaux pris isolément
-(texte minuscule, colonnes tassées, cellules illisibles). Décision : ne pas corriger la navbar et
-les tableaux séparément — traiter tout le responsive mobile en un seul lot dédié, à la fin, une fois
-les autres points de cette liste traités. Ne pas reprendre les points 6/7 isolément sans redemande.
+**Note :** approche volontairement robuste (scroll horizontal + colonnes larges), pas une refonte
+mobile par jour/par employé. Si un jour on veut une vue "un jour à la fois" sur téléphone, c'est un
+chantier séparé — le scroll horizontal actuel est déjà lisible et sans bug.
 
 ---
 
