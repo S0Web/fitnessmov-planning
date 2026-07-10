@@ -75,4 +75,27 @@ export const api = {
     req(`/personnel-creneaux/${employeId}/${date}`, { method: 'PUT', body: JSON.stringify(data) }),
   dupliquerSemainePersonnel: (semaine_source, semaine_cible) =>
     req('/personnel-creneaux/dupliquer', { method: 'POST', body: JSON.stringify({ semaine_source, semaine_cible }) }),
+
+  // Admin
+  downloadBackup: async () => {
+    const token = getToken();
+    const res = await fetch(`${BASE}/admin/backup`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || res.statusText);
+    }
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition') || '';
+    const filename = cd.match(/filename="?([^"]+)"?/)?.[1] || 'fitnessmov-backup.db';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  },
 };

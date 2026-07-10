@@ -95,6 +95,7 @@ export default function SeanceModal({ seance, coaches, coursTypes, pointeurs: in
     cours_type_id: seance?.cours_type_id || '',
     horaire:       toTimeInput(seance?.horaire || ''),
     duree_minutes: seance?.duree_minutes || 60,
+    date:          seance?.date          || '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
@@ -208,6 +209,20 @@ export default function SeanceModal({ seance, coaches, coursTypes, pointeurs: in
               ))}
             </select>
           </div>
+
+          {/* Date (déplacer la séance, uniquement en édition) */}
+          {seance && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+              <input
+                type="date"
+                value={form.date}
+                onChange={e => set('date', e.target.value)}
+                required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+              />
+            </div>
+          )}
 
           {/* Horaire + Durée */}
           <div className="grid grid-cols-2 gap-3">

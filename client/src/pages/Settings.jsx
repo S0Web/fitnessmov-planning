@@ -91,6 +91,8 @@ export default function Settings() {
   const [users, setUsers] = useState([]);
   const [audit, setAudit] = useState([]);
   const [modal, setModal] = useState(null);
+  const [backing, setBacking] = useState(false);
+  const [backupError, setBackupError] = useState(null);
 
   useEffect(() => {
     if (isManager) {
@@ -108,6 +110,18 @@ export default function Settings() {
   async function handleToggleActif(u) {
     await api.updateAppUser(u.id, { actif: u.actif ? 0 : 1 });
     api.getAppUsers().then(setUsers);
+  }
+
+  async function handleBackup() {
+    setBacking(true);
+    setBackupError(null);
+    try {
+      await api.downloadBackup();
+    } catch (e) {
+      setBackupError(e.message);
+    } finally {
+      setBacking(false);
+    }
   }
 
   const TABS = [
@@ -191,6 +205,18 @@ export default function Settings() {
               ))}
             </tbody>
           </table>
+
+          <div className="mt-4 bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-gray-700">Sauvegarde de la base</div>
+              <div className="text-xs text-gray-500 mt-0.5">Télécharge une copie complète du fichier de données.</div>
+              {backupError && <div className="text-xs text-red-600 mt-1">Erreur : {backupError}</div>}
+            </div>
+            <button onClick={handleBackup} disabled={backing}
+              className="text-sm px-4 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap">
+              {backing ? 'Préparation…' : '⬇ Télécharger une sauvegarde'}
+            </button>
+          </div>
         </div>
       )}
 

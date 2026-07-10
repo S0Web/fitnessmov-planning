@@ -112,15 +112,14 @@ responsable" à droite du tableau (visibles uniquement à l'impression, via clas
 Ça remplace le processus papier existant. **Fichiers.** `PlanningPersonnel.jsx`, `client/src/index.css`.
 **Effort M.**
 
-### 10. Sauvegarde de la base en un clic
-La DB de prod est un unique fichier SQLite sur un volume Railway, sans sauvegarde. Ajouter
-`GET /api/admin/backup` (manager, `requireManager`) qui renvoie le fichier :
-`res.download(DB_PATH, 'fitnessmov-YYYY-MM-DD.db')` — attention à utiliser la même résolution de
-chemin que `database.js` (`process.env.DB_PATH || …`). Bouton "Télécharger une sauvegarde" dans
-Paramètres (onglet Utilisateurs ou un nouvel onglet "Maintenance"). Comme WAL est actif, exécuter
-`db.run('PRAGMA wal_checkpoint(TRUNCATE)')` juste avant l'envoi pour que le fichier soit complet.
-**Fichiers.** `server/src/routes/admin.js`, `client/src/lib/api.js` (lien direct `<a href>` avec token
-en query ou fetch+blob), `Settings.jsx`. **Effort S/M.**
+### 10. ✅ Sauvegarde de la base en un clic — CORRIGÉ
+La DB de prod est un unique fichier SQLite sur un volume Railway, sans sauvegarde. **Solution
+appliquée.** `GET /api/admin/backup` (`requireManager`) exécute `PRAGMA wal_checkpoint(TRUNCATE)`
+puis `res.download(DB_PATH, 'fitnessmov-YYYY-MM-DD.db')`. Côté client, `api.downloadBackup()` fait un
+fetch+blob (le token Bearer ne peut pas passer par un simple `<a href>`) et déclenche le téléchargement.
+Bouton "⬇ Télécharger une sauvegarde" dans Paramètres > Utilisateurs. Vérifié en local : fichier `.db`
+téléchargé valide (reconnu comme base SQLite), taille et compteur de fichier identiques à la base
+source au moment du téléchargement.
 
 ### 11. Récap mensuel des heures du personnel (aide paie)
 Équivalent du récap coachs mais pour les employés : total d'heures `travail` par employé par mois
@@ -129,10 +128,12 @@ en query ou fetch+blob), `Settings.jsx`. **Effort S/M.**
 calculer en JS après un SELECT brut. Affichage : section sous le tableau hebdo ou onglet dédié.
 **Effort M.**
 
-### 12. Déplacer une séance de cours (champ date manquant)
-Le `PATCH /api/seances/:id` accepte déjà `date`, mais `SeanceModal.jsx` n'a pas de champ date →
-impossible de déplacer une séance sans la supprimer/recréer. Ajouter `<input type="date">` dans le
-formulaire (pré-rempli avec `seance.date`). **Effort S.**
+### 12. ✅ Déplacer une séance de cours (champ date manquant) — CORRIGÉ
+Le `PATCH /api/seances/:id` acceptait déjà `date`, mais `SeanceModal.jsx` n'avait pas de champ date →
+impossible de déplacer une séance sans la supprimer/recréer. **Solution appliquée.**
+`<input type="date">` ajouté dans le formulaire, uniquement en mode édition (pas à la création, où
+la date vient de la cellule cliquée). Vérifié en local : une séance du jeudi 9 déplacée au samedi 11
+disparaît bien de jeudi et apparaît sur samedi après enregistrement.
 
 ### 13. Compteur de CP par année
 `GET /api/personnel-creneaux/cp-summary` additionne tout l'historique — or les CP se comptent par
