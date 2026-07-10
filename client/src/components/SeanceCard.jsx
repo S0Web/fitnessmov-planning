@@ -57,8 +57,13 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
       )}
 
       {/* Heure */}
-      <div className="text-[11px] font-bold text-gray-500 tabular-nums mb-0.5">
-        {formatHoraire(startMins)} – {formatHoraire(endMins)}
+      <div className="flex items-center justify-between mb-0.5">
+        <span className="text-[11px] font-bold text-gray-500 tabular-nums">
+          {formatHoraire(startMins)} – {formatHoraire(endMins)}
+        </span>
+        {seance.notes && (
+          <span title={seance.notes} className="text-[11px] leading-none cursor-help" aria-label="Cette séance a une note">📝</span>
+        )}
       </div>
 
       {/* Nom du cours */}
@@ -91,7 +96,7 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
       <button
         onClick={(e) => { e.stopPropagation(); onDelete(seance.id); }}
         className="absolute top-0.5 right-1 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all text-base leading-none"
-        title="Supprimer"
+        title="Supprimer" aria-label="Supprimer la séance"
       >×</button>
     </div>
   );

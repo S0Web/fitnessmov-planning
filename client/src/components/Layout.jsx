@@ -55,6 +55,7 @@ export default function Layout({ children }) {
             <button
               onClick={switchProfile}
               title="Changer de profil"
+              aria-label="Changer de profil"
               className="hidden md:flex ml-auto items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-white/10 transition-colors"
             >
               <Bubble user={user} />

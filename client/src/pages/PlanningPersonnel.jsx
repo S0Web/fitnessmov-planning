@@ -223,11 +223,11 @@ export default function PlanningPersonnel() {
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2 mb-3">
           <h1 className="text-lg font-bold text-gray-800 mr-2">Planning personnel</h1>
-          <button onClick={() => setLundi(semainePrecedente(lundi))}
+          <button onClick={() => setLundi(semainePrecedente(lundi))} aria-label="Semaine précédente"
             className="px-2.5 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">←</button>
           <button onClick={() => setLundi(getLundi())}
             className="px-2.5 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">Auj.</button>
-          <button onClick={() => setLundi(semaineSuivante(lundi))}
+          <button onClick={() => setLundi(semaineSuivante(lundi))} aria-label="Semaine suivante"
             className="px-2.5 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">→</button>
           <span className="ml-1 text-sm font-semibold text-gray-700">
             {semaine[0].toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })}
@@ -319,13 +319,18 @@ export default function PlanningPersonnel() {
                         const isAbsence = cellCreneaux.length > 0 && cellCreneaux[0].type !== 'travail';
                         const typeCfg = isAbsence ? TYPE_CONFIG[cellCreneaux[0].type] : null;
 
+                        const noteText = cellCreneaux.map(c => c.notes).filter(Boolean).join(' · ');
+
                         return (
                           <td key={iso} onClick={() => setCellModal({ employe: emp, date: iso })}
                             className="group/cell p-1 min-w-[100px] h-14 cursor-pointer align-middle">
                             <div
-                              className="h-full w-full rounded-lg flex flex-col items-center justify-center gap-1 transition-colors"
+                              className="relative h-full w-full rounded-lg flex flex-col items-center justify-center gap-1 transition-colors"
                               style={{ backgroundColor: typeCfg ? typeCfg.bg : 'transparent' }}
                             >
+                              {noteText && (
+                                <span title={noteText} aria-label="Note" className="absolute top-0.5 right-1 text-[10px] leading-none cursor-help">📝</span>
+                              )}
                               {cellCreneaux.length === 0 && (
                                 <span className="text-gray-300 text-base leading-none opacity-0 group-hover/cell:opacity-100 transition-opacity">+</span>
                               )}

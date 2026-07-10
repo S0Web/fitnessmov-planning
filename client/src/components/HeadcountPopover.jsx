@@ -12,6 +12,7 @@ function UsersIcon({ className }) {
 
 export default function HeadcountPopover({ value, onSelect }) {
   const [open, setOpen] = useState(false);
+  const [autre, setAutre] = useState('');
   const ref = useRef(null);
 
   useEffect(() => {
@@ -32,7 +33,14 @@ export default function HeadcountPopover({ value, onSelect }) {
 
   function handlePick(n) {
     onSelect(n);
+    setAutre('');
     setOpen(false);
+  }
+
+  function handleAutre(e) {
+    e.preventDefault();
+    const n = parseInt(autre, 10);
+    if (Number.isFinite(n) && n >= 0) handlePick(n);
   }
 
   return (
@@ -41,6 +49,7 @@ export default function HeadcountPopover({ value, onSelect }) {
         type="button"
         onClick={(e) => { e.stopPropagation(); setOpen(o => !o); }}
         title="Renseigner l'effectif"
+        aria-label="Renseigner l'effectif"
         className={`flex items-center gap-1 rounded px-1.5 py-0.5 leading-none transition-colors
           ${value != null
             ? 'text-sky-700 bg-sky-50 hover:bg-sky-100'
@@ -67,6 +76,18 @@ export default function HeadcountPopover({ value, onSelect }) {
               </button>
             ))}
           </div>
+          <form onSubmit={handleAutre} className="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-gray-100">
+            <input
+              type="number" min="0" inputMode="numeric"
+              value={autre}
+              onChange={(e) => setAutre(e.target.value)}
+              placeholder="Autre…"
+              aria-label="Autre effectif"
+              className="w-full border border-gray-200 rounded px-2 py-1 text-[11px] focus:outline-none focus:ring-1 focus:ring-sky-300"
+            />
+            <button type="submit" disabled={autre === ''}
+              className="px-2 py-1 text-[11px] rounded bg-sky-600 text-white font-medium disabled:opacity-30">OK</button>
+          </form>
         </div>
       )}
     </span>
