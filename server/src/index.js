@@ -8,9 +8,12 @@ const cors    = require('cors');
 const path    = require('path');
 
 require('./db/database');
+const { seedDefaults } = require('./db/seedDefaults');
+seedDefaults(); // remplit le catalogue de cours si la base est vierge (nouvelle salle)
 
 const { requireAuth }   = require('./middleware/auth');
 const { router: authRouter } = require('./routes/auth');
+const configRouter    = require('./routes/config');
 const healthRouter    = require('./routes/health');
 const coachesRouter   = require('./routes/coaches');
 const coursRouter     = require('./routes/coursTypes');
@@ -42,6 +45,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes publiques
 app.use('/api/health', healthRouter);
+app.use('/api/config', configRouter);
 app.use('/api/auth',   authRouter);
 
 // Routes protégées

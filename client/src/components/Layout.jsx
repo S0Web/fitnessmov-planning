@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useConfig } from '../context/ConfigContext';
 import { colorForUser } from '../lib/utils';
 
 const links = [
@@ -23,6 +24,7 @@ function Bubble({ user, size = 'h-7 w-7' }) {
 
 export default function Layout({ children }) {
   const { user, switchProfile } = useAuth();
+  const { salleNom } = useConfig();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -30,7 +32,14 @@ export default function Layout({ children }) {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-sky-700 text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4 md:gap-8">
-          <span className="font-bold text-base md:text-lg tracking-tight whitespace-nowrap">Fitnessmov&apos; Planning</span>
+          <span className="font-bold text-base md:text-lg tracking-tight whitespace-nowrap flex items-baseline gap-2">
+            Fitnessmov&apos; Planning
+            {salleNom && (
+              <span className="text-[11px] font-semibold bg-white/20 text-white rounded-full px-2 py-0.5 whitespace-nowrap">
+                {salleNom}
+              </span>
+            )}
+          </span>
 
           {/* Nav desktop */}
           <nav className="hidden md:flex gap-1">

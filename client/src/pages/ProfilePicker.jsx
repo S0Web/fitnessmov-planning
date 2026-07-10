@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useConfig } from '../context/ConfigContext';
 import { api } from '../lib/api';
 import { colorForUser } from '../lib/utils';
 import logo from '../assets/logo.png';
@@ -55,6 +56,7 @@ function AddProfileModal({ onCreated, onClose }) {
 
 export default function ProfilePicker() {
   const { selectProfile } = useAuth();
+  const { salleNom } = useConfig();
   const [profiles, setProfiles] = useState([]);
   const [error, setError]       = useState(null);
   const [selecting, setSelecting] = useState(null);
@@ -82,6 +84,9 @@ export default function ProfilePicker() {
       <div className="flex flex-col items-center mb-10">
         <h1 className="text-2xl font-medium text-gray-600 mb-3">Bienvenue chez</h1>
         <img src={logo} alt="Fitnessmov Aqua" className="h-24 object-contain" />
+        {salleNom && (
+          <p className="mt-2 text-sm font-semibold text-gray-500 uppercase tracking-wide">{salleNom}</p>
+        )}
       </div>
 
       {error && (

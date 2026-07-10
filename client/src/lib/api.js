@@ -25,6 +25,9 @@ async function req(path, options = {}) {
 }
 
 export const api = {
+  // Config publique (nom de la salle, etc.)
+  getConfig: () => req('/config'),
+
   // Auth
   getProfiles:    () => req('/auth/profiles'),
   createProfile:  (data) => req('/auth/profiles', { method: 'POST', body: JSON.stringify(data) }),
