@@ -266,6 +266,18 @@ démarre avec un annuaire vide (à remplir par le gérant) ; Corbeil est pré-re
 vide dans ce commit**, la transcription des contacts réels (numéros de téléphone personnels) sera
 ajoutée séparément après confirmation explicite de l'utilisateur (données sensibles).
 
+### 30. ✅ Fix import Ballancourt : les cours aqua manquaient — CORRIGÉ
+Le fichier `Planning_des_cours.xlsx` place les séances fitness et aqua dans deux tableaux côte à côte
+par mois, mais la colonne de départ du second tableau (aqua) varie d'un mois à l'autre (10, 11, 13 ou
+14 selon la feuille), et un mois (avril) a même un schéma de colonnes différent (sans colonne Durée) pour
+son second bloc. L'ancien parseur supposait une position de colonne fixe et ne capturait qu'une fraction
+des séances aqua (194 sur ~1195 réelles). Nouveau parseur (détection des blocs par scan du catalogue de
+cours plutôt que par position de colonne, avec détection automatique par bloc de la présence ou non
+d'une colonne Durée) : `server/src/db/ballancourtSeances.js` passe de 2412 à 3406 séances. Le script
+d'import restant idempotent (déduplication par date+horaire+cours_type_id), relancer le bouton
+"Importer l'historique Ballancourt" depuis Paramètres ajoute uniquement les ~990 séances manquantes sans
+toucher à ce qui est déjà en base.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)
