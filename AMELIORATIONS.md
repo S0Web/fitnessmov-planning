@@ -237,6 +237,15 @@ Import complet demandé explicitement par l'utilisateur (catalogue + historique 
   Paramètres (visible uniquement quand `SALLE_NOM=Ballancourt-sur-Essonne`), idempotent (ne recrée
   jamais une séance ou un jour déjà présent).
 
+### 26. ✅ Filet de sécurité : plus aucun manager actif sur une salle — CORRIGÉ
+Sur Ballancourt, l'unique compte manager a été supprimé définitivement (fonctionnalité #39 : la ligne
+reste en DB mais `actif=0`), ce qui empêchait quiconque de promouvoir un autre profil manager (toutes
+les routes de gestion des rôles sont elles-mêmes réservées aux managers — deadlock). Ajout de
+`server/src/db/recoverManager.js`, exécuté une fois au démarrage du serveur : si une salle donnée n'a
+plus aucun manager actif, promeut automatiquement un profil de secours nommé en dur (Sofiann pour
+Ballancourt). Ne fait rien tant qu'un manager actif existe déjà (sans risque de laisser tourner
+indéfiniment), et ne s'applique qu'à la salle ciblée via `SALLE_NOM`.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

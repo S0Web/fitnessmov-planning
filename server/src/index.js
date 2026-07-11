@@ -11,6 +11,9 @@ require('./db/database');
 const { seedDefaults } = require('./db/seedDefaults');
 seedDefaults(); // remplit le catalogue de cours si la base est vierge (nouvelle salle)
 
+const { recoverManager } = require('./db/recoverManager');
+recoverManager('Ballancourt-sur-Essonne', 'Sofiann'); // filet de sécurité si le seul manager a été supprimé définitivement
+
 const { requireAuth }   = require('./middleware/auth');
 const { router: authRouter } = require('./routes/auth');
 const configRouter    = require('./routes/config');
