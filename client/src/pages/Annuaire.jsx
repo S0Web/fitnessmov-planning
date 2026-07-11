@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
+import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 
@@ -152,9 +153,9 @@ export default function Annuaire() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-lg font-bold text-gray-800">Annuaire</h1>
         <button onClick={() => setModal({})}
-          className="text-white px-4 py-2 rounded text-sm font-medium hover:opacity-90 self-start sm:self-auto"
+          className="flex items-center gap-1.5 text-white px-4 py-2 rounded text-sm font-medium hover:opacity-90 self-start sm:self-auto"
           style={{ backgroundColor: '#2fa8cc' }}>
-          + Nouveau contact
+          <Plus className="h-4 w-4" /> Nouveau contact
         </button>
       </div>
 

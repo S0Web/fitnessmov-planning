@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 
 const CATEG_LABELS = { aqua: 'Aqua', fitness: 'Fitness' };
@@ -111,12 +112,12 @@ export default function CoursCombobox({ value, coursTypes, onChange, onCreated }
             <div className="border-t border-gray-200 p-2 space-y-1">
               {error && <p className="text-xs text-red-600 px-1">{error}</p>}
               <button type="button" disabled={creating} onClick={() => handleCreate('aqua')}
-                className="w-full text-left px-2 py-1.5 text-sm text-sky-600 hover:bg-sky-50 rounded disabled:opacity-50">
-                + Ajouter « {search.trim()} » en Aqua
+                className="w-full flex items-center gap-1.5 text-left px-2 py-1.5 text-sm text-sky-600 hover:bg-sky-50 rounded disabled:opacity-50">
+                <Plus className="h-3.5 w-3.5 flex-shrink-0" /> Ajouter « {search.trim()} » en Aqua
               </button>
               <button type="button" disabled={creating} onClick={() => handleCreate('fitness')}
-                className="w-full text-left px-2 py-1.5 text-sm text-amber-600 hover:bg-amber-50 rounded disabled:opacity-50">
-                + Ajouter « {search.trim()} » en Fitness
+                className="w-full flex items-center gap-1.5 text-left px-2 py-1.5 text-sm text-amber-600 hover:bg-amber-50 rounded disabled:opacity-50">
+                <Plus className="h-3.5 w-3.5 flex-shrink-0" /> Ajouter « {search.trim()} » en Fitness
               </button>
             </div>
           )}

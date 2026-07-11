@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useConfig } from '../context/ConfigContext';
@@ -252,9 +253,9 @@ export default function Settings() {
           <div className="flex justify-between items-center mb-3 gap-3">
             <span className="text-sm text-gray-500">{users.length} utilisateur(s)</span>
             <button onClick={() => setModal({})}
-              className="text-white px-4 py-2 rounded text-sm font-medium"
+              className="flex items-center gap-1.5 text-white px-4 py-2 rounded text-sm font-medium"
               style={{ backgroundColor: '#2fa8cc' }}>
-              + Nouveau
+              <Plus className="h-4 w-4" /> Nouveau
             </button>
           </div>
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">

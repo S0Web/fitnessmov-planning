@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -301,9 +302,9 @@ export default function Coaches() {
               Inactifs
             </label>
             <button onClick={() => setModal({})}
-              className="text-white px-4 py-2 rounded text-sm font-medium hover:opacity-90"
+              className="flex items-center gap-1.5 text-white px-4 py-2 rounded text-sm font-medium hover:opacity-90"
               style={{ backgroundColor: '#2fa8cc' }}>
-              + Nouveau coach
+              <Plus className="h-4 w-4" /> Nouveau coach
             </button>
           </div>
         </div>

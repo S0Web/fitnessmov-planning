@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import {
   getLundi, getSemaine, toISO,
@@ -108,8 +109,9 @@ function VueGrille({ semaine, seances, loading, today, onOpenCard, onPatch, onDe
                       ))}
                       <button
                         onClick={() => onAdd(iso)}
-                        className="w-full text-[10px] text-gray-400 hover:text-sky-600 py-0.5 border border-dashed border-gray-300 hover:border-sky-300 bg-white/40 rounded-md transition-colors"
-                      >+</button>
+                        aria-label="Ajouter une séance"
+                        className="w-full flex items-center justify-center text-gray-400 hover:text-sky-600 py-0.5 border border-dashed border-gray-300 hover:border-sky-300 bg-white/40 rounded-md transition-colors"
+                      ><Plus className="h-3 w-3" /></button>
                     </div>
                   </td>
                 );

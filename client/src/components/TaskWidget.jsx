@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -105,8 +106,8 @@ export default function TaskWidget({ lundi }) {
             placeholder="Nouvelle tâche…"
             className="flex-1 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-300" />
           <button type="button" onClick={addTask} disabled={!newTitre.trim()}
-            className="px-2 text-sm text-gray-400 hover:text-sky-500 disabled:opacity-30 transition-colors"
-            title="Ajouter">+</button>
+            className="px-2 flex items-center text-gray-400 hover:text-sky-500 disabled:opacity-30 transition-colors"
+            title="Ajouter" aria-label="Ajouter la tâche"><Plus className="h-4 w-4" /></button>
         </div>
       </div>
     </div>

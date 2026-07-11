@@ -288,6 +288,13 @@ téléphone + disciplines transcrits de la fiche papier, sans jamais écraser un
 (s'arrête dès qu'un coach a déjà une discipline ou un téléphone). Layout : lignes contraintes en largeur
 (`max-w-2xl`) pour rapprocher nom et téléphone sur desktop, fond alterné (zebra) comme les autres tableaux.
 
+### 32. ✅ Icônes lucide-react — CORRIGÉ
+La molette (Paramètres), le burger/croix (menu mobile) et tous les boutons « + » (nouveau contact,
+nouveau coach, ajouter un employé/une séance/un créneau/un cours, tâche) étaient des glyphes texte ou des
+SVG faits main — remplacés par des icônes `lucide-react` (`Settings`, `Menu`/`X`, `Plus`) dans
+`Layout.jsx`, `Annuaire.jsx`, `Coaches.jsx`, `Settings.jsx`, `PlanningPersonnel.jsx`, `Planning.jsx`,
+`TaskWidget.jsx`, `CoursCombobox.jsx`, `PersonnelCreneauModal.jsx`.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

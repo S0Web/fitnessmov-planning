@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { Settings as GearIcon, Menu as MenuIcon, X as XIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useConfig } from '../context/ConfigContext';
 import { colorForUser } from '../lib/utils';
@@ -19,15 +20,6 @@ function Bubble({ user, size = 'h-7 w-7' }) {
     >
       {user.prenom?.[0]}{user.nom?.[0]}
     </span>
-  );
-}
-
-function GearIcon({ className }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 3.75h3l.4 2.1a6.6 6.6 0 011.7.98l2-.82 1.5 2.6-1.6 1.28a6.7 6.7 0 010 1.96l1.6 1.28-1.5 2.6-2-.82a6.6 6.6 0 01-1.7.98l-.4 2.1h-3l-.4-2.1a6.6 6.6 0 01-1.7-.98l-2 .82-1.5-2.6 1.6-1.28a6.7 6.7 0 010-1.96L3.4 8.61l1.5-2.6 2 .82a6.6 6.6 0 011.7-.98l.4-2.1z" />
-      <circle cx="12" cy="12" r="2.5" />
-    </svg>
   );
 }
 
@@ -86,7 +78,7 @@ export default function Layout({ children }) {
                 aria-label="Paramètres"
                 className={({ isActive }) => `p-1.5 rounded-full transition-colors ${isActive ? 'bg-white/20 text-white' : 'text-sky-100 hover:bg-white/10'}`}
               >
-                <GearIcon className="h-5 w-5" />
+                <GearIcon className="h-5 w-5" strokeWidth={1.8} />
               </NavLink>
             </div>
           )}
@@ -99,11 +91,7 @@ export default function Layout({ children }) {
             aria-expanded={menuOpen}
             className="md:hidden ml-auto p-1.5 rounded hover:bg-white/10 transition-colors"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              {menuOpen
-                ? <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                : <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />}
-            </svg>
+            {menuOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
           </button>
         </div>
 

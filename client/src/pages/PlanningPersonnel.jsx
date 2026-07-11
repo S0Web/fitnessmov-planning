@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -344,7 +345,7 @@ export default function PlanningPersonnel() {
                                 <span title={noteText} aria-label="Note" className="absolute top-0.5 right-1 text-[10px] leading-none cursor-help">📝</span>
                               )}
                               {cellCreneaux.length === 0 && (
-                                <span className="text-gray-300 text-base leading-none opacity-0 group-hover/cell:opacity-100 transition-opacity">+</span>
+                                <Plus className="h-3.5 w-3.5 text-gray-300 opacity-0 group-hover/cell:opacity-100 transition-opacity" />
                               )}
                               {typeCfg && (
                                 <span className="text-[11px] font-bold uppercase tracking-wide" style={{ color: typeCfg.text }}>
@@ -371,7 +372,7 @@ export default function PlanningPersonnel() {
                   <td colSpan={9} className="sticky left-0 bg-white">
                     <button onClick={() => setShowAddEmploye(true)}
                       className="flex items-center gap-1.5 pl-3 py-1.5 text-xs text-gray-400 hover:text-sky-600 transition-colors">
-                      <span className="text-base leading-none">+</span> employé
+                      <Plus className="h-3.5 w-3.5" /> employé
                     </button>
                   </td>
                   <td className="bg-white" />

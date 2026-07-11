@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Plus } from 'lucide-react';
 
 const TYPES = [
   { id: 'travail', label: 'Travail' },
@@ -108,8 +109,8 @@ export default function PersonnelCreneauModal({ employe, date, creneaux, onSave,
               ))}
               {segments.length < 2 && (
                 <button type="button" onClick={addSegment}
-                  className="text-xs text-sky-600 hover:underline">
-                  + Ajouter un 2e créneau
+                  className="flex items-center gap-1 text-xs text-sky-600 hover:underline">
+                  <Plus className="h-3.5 w-3.5" /> Ajouter un 2e créneau
                 </button>
               )}
             </div>
