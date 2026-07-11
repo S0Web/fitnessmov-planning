@@ -7,11 +7,12 @@ const SEANCE_SELECT = `
     s.id, s.date, s.horaire, s.duree_minutes, s.statut, s.nb_presents, s.notes,
     s.cours_type_id, ct.nom AS cours_nom, ct.categorie,
     s.coach_id, c.prenom AS coach_prenom, c.nom AS coach_nom,
-    s.pointeur_id, p.nom AS pointeur_nom
+    s.pointeur_user_id,
+    TRIM(pu.prenom || ' ' || pu.nom) AS pointeur_nom
   FROM seances s
   JOIN cours_types ct   ON ct.id = s.cours_type_id
   LEFT JOIN coaches c   ON c.id  = s.coach_id
-  LEFT JOIN pointeurs p ON p.id  = s.pointeur_id
+  LEFT JOIN app_users pu ON pu.id = s.pointeur_user_id
 `;
 
 // Calcule lundi et dimanche d'une semaine à partir d'une date ISO string (sans timezone bug)
@@ -144,7 +145,7 @@ router.patch('/:id', (req, res) => {
       body.statut = 'effectue';
     }
 
-    const allowed = ['statut', 'nb_presents', 'pointeur_id', 'notes', 'coach_id',
+    const allowed = ['statut', 'nb_presents', 'pointeur_user_id', 'notes', 'coach_id',
                      'cours_type_id', 'horaire', 'duree_minutes', 'date'];
     const updates = [];
     const values  = [];
@@ -152,8 +153,8 @@ router.patch('/:id', (req, res) => {
     for (const key of allowed) {
       if (body[key] !== undefined) {
         updates.push(`${key} = ?`);
-        // coach_id et pointeur_id : 0 ou '' deviennent NULL
-        const nullables = ['coach_id', 'pointeur_id', 'nb_presents'];
+        // coach_id et pointeur_user_id : 0 ou '' deviennent NULL
+        const nullables = ['coach_id', 'pointeur_user_id', 'nb_presents'];
         const v = body[key];
         values.push(nullables.includes(key) && (v === '' || v === 0) ? null : v);
       }

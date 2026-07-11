@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { STATUT_CONFIG } from '../lib/utils';
-import { api } from '../lib/api';
 
 // Convertit "9h30" ou "18:15" → "09:30" pour <input type="time">
 function toTimeInput(h) {
@@ -16,104 +15,20 @@ function toTimeInput(h) {
   return h;
 }
 
-function PointeurSelector({ value, pointeurs, onChange, onAdd, onDelete }) {
-  const [newNom, setNewNom] = useState('');
-  const [adding, setAdding] = useState(false);
-
-  async function handleAdd() {
-    if (!newNom.trim() || adding) return;
-    setAdding(true);
-    try {
-      await onAdd(newNom.trim());
-      setNewNom('');
-    } finally { setAdding(false); }
-  }
-
-  return (
-    <div className="space-y-1.5">
-      <div className="flex gap-1">
-        <select
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
-        >
-          <option value="">—</option>
-          {(pointeurs || []).map(p => (
-            <option key={p.id} value={p.id}>{p.nom}</option>
-          ))}
-        </select>
-        {value && (
-          <button
-            type="button"
-            onClick={() => onChange('')}
-            title="Désélectionner"
-            className="px-2 py-1 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg border border-gray-200 text-sm transition-colors"
-          >✕</button>
-        )}
-        {value && (
-          <button
-            type="button"
-            onClick={() => {
-              const nom = (pointeurs || []).find(p => p.id === Number(value))?.nom || '';
-              if (!window.confirm(`Supprimer définitivement le pointeur "${nom}" ? Cette action est irréversible et impacte tout le monde.`)) return;
-              onChange('');
-              onDelete(Number(value));
-            }}
-            title="Supprimer définitivement ce pointeur"
-            className="px-2 py-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-gray-200 text-sm transition-colors"
-          >🗑</button>
-        )}
-      </div>
-      <div className="flex gap-1">
-        <input
-          value={newNom}
-          onChange={e => setNewNom(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAdd(); } }}
-          placeholder="Nouveau pointeur…"
-          className="flex-1 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-300"
-        />
-        <button
-          type="button"
-          onClick={handleAdd}
-          disabled={adding || !newNom.trim()}
-          className="px-2 py-1 text-sm rounded text-gray-400 hover:text-sky-500 disabled:opacity-30 transition-colors"
-          title="Ajouter"
-        >+</button>
-      </div>
-    </div>
-  );
-}
-
-export default function SeanceModal({ seance, coaches, coursTypes, pointeurs: initPointeurs, onSave, onClose, onPointeursChange }) {
-  const [pointeurs, setPointeurs] = useState(initPointeurs || []);
+export default function SeanceModal({ seance, coaches, coursTypes, appUsers = [], onSave, onClose }) {
   const [form, setForm] = useState({
-    statut:        seance?.statut        || 'programme',
-    nb_presents:   seance?.nb_presents   ?? '',
-    pointeur_id:   seance?.pointeur_id   ?? '',
-    notes:         seance?.notes         || '',
-    coach_id:      seance?.coach_id      || '',
-    cours_type_id: seance?.cours_type_id || '',
-    horaire:       toTimeInput(seance?.horaire || ''),
-    duree_minutes: seance?.duree_minutes || 60,
-    date:          seance?.date          || '',
+    statut:           seance?.statut           || 'programme',
+    nb_presents:      seance?.nb_presents       ?? '',
+    pointeur_user_id: seance?.pointeur_user_id  ?? '',
+    notes:            seance?.notes             || '',
+    coach_id:         seance?.coach_id          || '',
+    cours_type_id:    seance?.cours_type_id     || '',
+    horaire:          toTimeInput(seance?.horaire || ''),
+    duree_minutes:    seance?.duree_minutes     || 60,
+    date:             seance?.date              || '',
   });
   const [saving, setSaving] = useState(false);
   const [error, setError]   = useState(null);
-
-  async function handleAddPointeur(nom) {
-    const created = await api.createPointeur(nom);
-    const updated = [...pointeurs, created];
-    setPointeurs(updated);
-    set('pointeur_id', String(created.id));
-    onPointeursChange?.(updated);
-  }
-
-  async function handleDeletePointeur(id) {
-    await api.deletePointeur(id);
-    const updated = pointeurs.filter(p => p.id !== id);
-    setPointeurs(updated);
-    onPointeursChange?.(updated);
-  }
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
 
@@ -124,11 +39,11 @@ export default function SeanceModal({ seance, coaches, coursTypes, pointeurs: in
     try {
       const payload = {
         ...form,
-        nb_presents:   form.nb_presents === '' ? null : Number(form.nb_presents),
-        pointeur_id:   form.pointeur_id  === '' ? null : Number(form.pointeur_id),
-        coach_id:      form.coach_id     === '' ? null : Number(form.coach_id),
-        cours_type_id: Number(form.cours_type_id),
-        duree_minutes: Number(form.duree_minutes),
+        nb_presents:      form.nb_presents      === '' ? null : Number(form.nb_presents),
+        pointeur_user_id: form.pointeur_user_id === '' ? null : Number(form.pointeur_user_id),
+        coach_id:         form.coach_id         === '' ? null : Number(form.coach_id),
+        cours_type_id:    Number(form.cours_type_id),
+        duree_minutes:    Number(form.duree_minutes),
       };
       await onSave(payload);
       onClose();
@@ -285,13 +200,16 @@ export default function SeanceModal({ seance, coaches, coursTypes, pointeurs: in
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Pointeur</label>
-              <PointeurSelector
-                value={form.pointeur_id}
-                pointeurs={pointeurs}
-                onChange={v => set('pointeur_id', v)}
-                onAdd={handleAddPointeur}
-                onDelete={handleDeletePointeur}
-              />
+              <select
+                value={form.pointeur_user_id}
+                onChange={e => set('pointeur_user_id', e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
+              >
+                <option value="">—</option>
+                {appUsers.map(u => (
+                  <option key={u.id} value={u.id}>{u.prenom}{u.nom ? ` ${u.nom}` : ''}</option>
+                ))}
+              </select>
             </div>
           </div>
 

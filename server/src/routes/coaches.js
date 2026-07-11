@@ -12,7 +12,7 @@ router.get('/recap', (req, res) => {
   const debut = req.query.debut || defaultDebut;
   const fin   = req.query.fin   || defaultFin;
 
-  const coaches = db.all('SELECT id, prenom, nom, email, telephone, actif FROM coaches ORDER BY prenom, nom');
+  const coaches = db.all('SELECT id, prenom, nom, email, telephone, actif FROM coaches WHERE supprime = 0 ORDER BY prenom, nom');
   const seances = db.all(
     `SELECT coach_id, SUBSTR(date,1,7) as mois, SUM(duree_minutes) as mins
      FROM seances
@@ -40,8 +40,8 @@ router.get('/recap', (req, res) => {
 router.get('/', (req, res) => {
   const { tous } = req.query;
   const rows = tous
-    ? db.all('SELECT * FROM coaches ORDER BY nom, prenom')
-    : db.all('SELECT * FROM coaches WHERE actif = 1 ORDER BY nom, prenom');
+    ? db.all('SELECT * FROM coaches WHERE supprime = 0 ORDER BY nom, prenom')
+    : db.all('SELECT * FROM coaches WHERE actif = 1 AND supprime = 0 ORDER BY nom, prenom');
   res.json(rows);
 });
 
@@ -106,11 +106,16 @@ router.patch('/:id/actif', (req, res) => {
   res.json(db.get('SELECT * FROM coaches WHERE id = ?', [req.params.id]));
 });
 
-// DELETE /api/coaches/:id — soft delete (désactive)
+// DELETE /api/coaches/:id — désactive (soft) ; avec ?definitif=1 : suppression
+// définitive (la ligne reste en DB pour l'historique des séances passées).
 router.delete('/:id', (req, res) => {
   const existing = db.get('SELECT id FROM coaches WHERE id = ?', [req.params.id]);
   if (!existing) return res.status(404).json({ error: 'Coach introuvable' });
-  db.run('UPDATE coaches SET actif = 0 WHERE id = ?', [req.params.id]);
+  if (req.query.definitif === '1') {
+    db.run('UPDATE coaches SET supprime = 1, actif = 0 WHERE id = ?', [req.params.id]);
+  } else {
+    db.run('UPDATE coaches SET actif = 0 WHERE id = ?', [req.params.id]);
+  }
   res.json({ ok: true });
 });
 

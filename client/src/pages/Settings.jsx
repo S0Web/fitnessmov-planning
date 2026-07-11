@@ -154,6 +154,17 @@ export default function Settings() {
     }
   }
 
+  async function handleDeleteUser(u) {
+    if (!confirm(`Supprimer définitivement ${u.prenom} ${u.nom} ?\n\nIl disparaît de la liste mais son nom reste visible sur les plannings passés où il apparaît.`)) return;
+    try {
+      await api.deleteAppUser(u.id);
+      api.getAppUsers().then(setUsers);
+      toast.success('Profil supprimé');
+    } catch (e) {
+      toast.error('Échec : ' + e.message);
+    }
+  }
+
   async function handleBackup() {
     setBacking(true);
     setBackupError(null);
@@ -243,8 +254,13 @@ export default function Settings() {
                       {u.actif ? 'Actif' : 'Inactif'}
                     </button>
                   </td>
-                  <td className="px-3 py-2">
+                  <td className="px-3 py-2 whitespace-nowrap">
                     <button onClick={() => setModal(u)} className="text-xs text-sky-600 hover:underline">Modifier</button>
+                    {!u.actif && u.id !== me?.id && (
+                      <button onClick={() => handleDeleteUser(u)} className="ml-3 text-xs text-red-500 hover:underline">
+                        Supprimer définitivement
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -252,16 +268,13 @@ export default function Settings() {
           </table>
           </div>
 
-          <div className="mt-4 bg-white border border-gray-200 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <div className="text-sm font-semibold text-gray-700">Sauvegarde de la base</div>
-              <div className="text-xs text-gray-500 mt-0.5">Télécharge une copie complète du fichier de données.</div>
-              {backupError && <div className="text-xs text-red-600 mt-1">Erreur : {backupError}</div>}
-            </div>
+          {/* Sauvegarde — discrète (usage exceptionnel) */}
+          <div className="mt-6 text-right">
             <button onClick={handleBackup} disabled={backing}
-              className="text-sm px-4 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 whitespace-nowrap">
-              {backing ? 'Préparation…' : '⬇ Télécharger une sauvegarde'}
+              className="text-xs text-gray-400 hover:text-gray-600 hover:underline disabled:opacity-50">
+              {backing ? 'Préparation…' : '⬇ Télécharger une sauvegarde de la base'}
             </button>
+            {backupError && <div className="text-xs text-red-500 mt-1">Erreur : {backupError}</div>}
           </div>
         </div>
       )}

@@ -102,7 +102,7 @@ function LineChart({ data, xKey, yKey, color = '#5bcae8', label = '' }) {
 
 // ── Modale coach ───────────────────────────────────────────────────────────────
 
-function CoachModal({ coach, onSave, onToggle, onClose }) {
+function CoachModal({ coach, onSave, onToggle, onDelete, onClose }) {
   const isNew = !coach?.id;
   const [form, setForm] = useState({
     nom:       coach?.nom       || '',
@@ -143,12 +143,22 @@ function CoachModal({ coach, onSave, onToggle, onClose }) {
             {isNew ? 'Nouveau coach' : `${coach.prenom} ${coach.nom}`}
           </h2>
           {!isNew && (
-            <button
-              onClick={() => { onToggle(coach); onClose(); }}
-              className={`text-xs px-2 py-1 rounded ${coach.actif ? 'text-red-500 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
-            >
-              {coach.actif ? 'Désactiver' : 'Réactiver'}
-            </button>
+            <div className="flex items-center gap-1">
+              {!coach.actif && (
+                <button
+                  onClick={() => { onDelete(coach); onClose(); }}
+                  className="text-xs px-2 py-1 rounded text-red-500 hover:bg-red-50"
+                >
+                  Supprimer définitivement
+                </button>
+              )}
+              <button
+                onClick={() => { onToggle(coach); onClose(); }}
+                className={`text-xs px-2 py-1 rounded ${coach.actif ? 'text-red-500 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
+              >
+                {coach.actif ? 'Désactiver' : 'Réactiver'}
+              </button>
+            </div>
           )}
         </div>
         <form onSubmit={handleSubmit} className="px-6 py-4 space-y-3">
@@ -228,6 +238,11 @@ export default function Coaches() {
   }
   async function handleToggle(coach) {
     await api.toggleCoach(coach.id, !coach.actif);
+    load();
+  }
+  async function handleDelete(coach) {
+    if (!confirm(`Supprimer définitivement ${coach.prenom} ${coach.nom} ?\n\nIl disparaît de la liste mais reste visible sur les séances passées.`)) return;
+    await api.deleteCoach(coach.id, true);
     load();
   }
 
@@ -479,6 +494,7 @@ export default function Coaches() {
           coach={modal?.id ? modal : null}
           onSave={handleSave}
           onToggle={handleToggle}
+          onDelete={handleDelete}
           onClose={() => setModal(null)}
         />
       )}

@@ -3,9 +3,9 @@ const router  = express.Router();
 const db      = require('../db/database');
 const { requireAuth, requireManager } = require('../middleware/auth');
 
-// GET /api/app-users — liste (manager seulement)
+// GET /api/app-users — liste (manager seulement) — hors profils supprimés
 router.get('/', requireManager, (req, res) => {
-  const users = db.all('SELECT id, prenom, nom, email, role, actif, created_at FROM app_users ORDER BY prenom, nom');
+  const users = db.all('SELECT id, prenom, nom, email, role, actif, created_at FROM app_users WHERE supprime = 0 ORDER BY prenom, nom');
   res.json(users);
 });
 
@@ -55,6 +55,18 @@ router.put('/:id', requireAuth, (req, res) => {
   );
   if (!newActif) db.run('DELETE FROM sessions WHERE user_id = ?', [req.params.id]);
   res.json(db.get('SELECT id, prenom, nom, email, role, actif FROM app_users WHERE id = ?', [req.params.id]));
+});
+
+// DELETE /api/app-users/:id — suppression définitive (soft : la ligne reste en DB
+// pour que le planning historique affiche toujours le nom). Manager seulement.
+router.delete('/:id', requireManager, (req, res) => {
+  const user = db.get('SELECT id, prenom, nom FROM app_users WHERE id = ?', [req.params.id]);
+  if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+  db.run('UPDATE app_users SET supprime = 1, actif = 0 WHERE id = ?', [req.params.id]);
+  db.run('DELETE FROM sessions WHERE user_id = ?', [req.params.id]);
+  db.run('INSERT INTO audit_log (user_id, action, entity, entity_id, details) VALUES (?, ?, ?, ?, ?)',
+    [req.user.id, 'delete_user', 'app_users', user.id, `${user.prenom} ${user.nom}`]);
+  res.json({ ok: true });
 });
 
 // GET /api/app-users/audit?limit&offset — historique (manager), paginé

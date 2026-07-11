@@ -399,4 +399,30 @@ db.run(`
   )
 `);
 
+// ─── Suppression définitive (soft) : garde la ligne pour l'historique du planning ───
+tryAlter('ALTER TABLE app_users ADD COLUMN supprime INTEGER NOT NULL DEFAULT 0');
+tryAlter('ALTER TABLE coaches   ADD COLUMN supprime INTEGER NOT NULL DEFAULT 0');
+
+// ─── Pointeur = un utilisateur (app_users) plutôt qu'une liste séparée ───
+tryAlter('ALTER TABLE seances ADD COLUMN pointeur_user_id INTEGER REFERENCES app_users(id)');
+// Reprise best-effort : relie les anciens pointeurs (texte) aux utilisateurs par prénom.
+;(function backfillPointeurUser() {
+  try {
+    const cols = db.all('PRAGMA table_info(seances)').map(c => c.name);
+    if (!cols.includes('pointeur_id') || !cols.includes('pointeur_user_id')) return;
+    db.run(`
+      UPDATE seances
+      SET pointeur_user_id = (
+        SELECT au.id FROM app_users au
+        JOIN pointeurs p ON lower(au.prenom) = lower(p.nom)
+        WHERE p.id = seances.pointeur_id
+        LIMIT 1
+      )
+      WHERE pointeur_id IS NOT NULL AND pointeur_user_id IS NULL
+    `);
+  } catch (e) {
+    console.error('Backfill pointeur_user_id error:', e.message);
+  }
+})();
+
 module.exports = db;

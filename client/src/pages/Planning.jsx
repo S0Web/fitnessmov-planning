@@ -230,7 +230,7 @@ export default function Planning() {
   const [seances, setSeances]     = useState([]);
   const [coaches, setCoaches]     = useState([]);
   const [coursTypes, setCoursTypes] = useState([]);
-  const [pointeurs, setPointeurs] = useState([]);
+  const [profils, setProfils]     = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState(null);
   const [modal, setModal]         = useState(null);
@@ -256,7 +256,7 @@ export default function Planning() {
   useEffect(() => {
     api.getCoaches().then(setCoaches).catch(() => {});
     api.getCoursTypes().then(setCoursTypes).catch(() => {});
-    api.getPointeurs().then(setPointeurs).catch(() => {});
+    api.getProfiles().then(setProfils).catch(() => {});
   }, []);
 
   useEffect(() => { loadSeances(); }, [loadSeances]);
@@ -462,10 +462,9 @@ export default function Planning() {
           seance={seanceEnEdition}
           coaches={coaches}
           coursTypes={coursTypes}
-          pointeurs={pointeurs}
+          appUsers={profils}
           onSave={handleSave}
           onClose={() => setModal(null)}
-          onPointeursChange={setPointeurs}
         />
       )}
     </div>

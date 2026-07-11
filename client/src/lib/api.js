@@ -39,6 +39,7 @@ export const api = {
   getAppUsers:    () => req('/app-users'),
   createAppUser:  (data) => req('/app-users', { method: 'POST', body: JSON.stringify(data) }),
   updateAppUser:  (id, data) => req(`/app-users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAppUser:  (id) => req(`/app-users/${id}`, { method: 'DELETE' }),
   getAuditLog:    (limit = 200, offset = 0) => req(`/app-users/audit?limit=${limit}&offset=${offset}`),
 
   // Tâches
@@ -54,11 +55,7 @@ export const api = {
   createCoach:     (data) => req('/coaches', { method: 'POST', body: JSON.stringify(data) }),
   updateCoach:     (id, data) => req(`/coaches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   toggleCoach:     (id, actif) => req(`/coaches/${id}/actif`, { method: 'PATCH', body: JSON.stringify({ actif }) }),
-
-  // Pointeurs
-  getPointeurs:    () => req('/pointeurs'),
-  createPointeur:  (nom) => req('/pointeurs', { method: 'POST', body: JSON.stringify({ nom }) }),
-  deletePointeur:  (id) => req(`/pointeurs/${id}`, { method: 'DELETE' }),
+  deleteCoach:     (id, definitif) => req(`/coaches/${id}${definitif ? '?definitif=1' : ''}`, { method: 'DELETE' }),
 
   // Cours types
   getCoursTypes: () => req('/cours-types'),
