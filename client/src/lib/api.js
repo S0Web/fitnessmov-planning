@@ -62,6 +62,7 @@ export const api = {
 
   // Cours types
   getCoursTypes: () => req('/cours-types'),
+  createCoursType: (nom, categorie) => req('/cours-types', { method: 'POST', body: JSON.stringify({ nom, categorie }) }),
 
   // Séances
   getSeances:      (semaine) => req(`/seances${semaine ? `?semaine=${semaine}` : ''}`),

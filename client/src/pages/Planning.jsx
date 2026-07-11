@@ -465,6 +465,7 @@ export default function Planning() {
           appUsers={profils}
           onSave={handleSave}
           onClose={() => setModal(null)}
+          onCoursCreated={(ct) => setCoursTypes(prev => [...prev, ct])}
         />
       )}
     </div>

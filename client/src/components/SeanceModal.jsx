@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { STATUT_CONFIG } from '../lib/utils';
+import CoursCombobox from './CoursCombobox';
 
 // Convertit "9h30" ou "18:15" → "09:30" pour <input type="time">
 function toTimeInput(h) {
@@ -15,7 +16,7 @@ function toTimeInput(h) {
   return h;
 }
 
-export default function SeanceModal({ seance, coaches, coursTypes, appUsers = [], onSave, onClose }) {
+export default function SeanceModal({ seance, coaches, coursTypes, appUsers = [], onSave, onClose, onCoursCreated }) {
   const [form, setForm] = useState({
     statut:           seance?.statut           || 'programme',
     nb_presents:      seance?.nb_presents       ?? '',
@@ -35,6 +36,7 @@ export default function SeanceModal({ seance, coaches, coursTypes, appUsers = []
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
+    if (!form.cours_type_id) { setError('Choisis un cours.'); return; }
     setSaving(true);
     try {
       const payload = {
@@ -59,14 +61,6 @@ export default function SeanceModal({ seance, coaches, coursTypes, appUsers = []
     window.addEventListener('keydown', fn);
     return () => window.removeEventListener('keydown', fn);
   }, [onClose]);
-
-  const groupedCours = coursTypes.reduce((acc, ct) => {
-    if (!acc[ct.categorie]) acc[ct.categorie] = [];
-    acc[ct.categorie].push(ct);
-    return acc;
-  }, {});
-
-  const categLabels = { aqua: 'Aqua', fitness: 'Fitness' };
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -93,21 +87,12 @@ export default function SeanceModal({ seance, coaches, coursTypes, appUsers = []
           {/* Cours */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Cours *</label>
-            <select
+            <CoursCombobox
               value={form.cours_type_id}
-              onChange={e => set('cours_type_id', e.target.value)}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400"
-            >
-              <option value="">-- Choisir --</option>
-              {Object.entries(groupedCours).map(([cat, items]) => (
-                <optgroup key={cat} label={categLabels[cat]}>
-                  {items.map(ct => (
-                    <option key={ct.id} value={ct.id}>{ct.nom}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
+              coursTypes={coursTypes}
+              onChange={v => set('cours_type_id', v)}
+              onCreated={onCoursCreated}
+            />
           </div>
 
           {/* Coach */}
