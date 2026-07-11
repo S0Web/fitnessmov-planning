@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useConfig } from '../context/ConfigContext';
 import { useToast } from '../context/ToastContext';
 import { parseServerDate, colorForUser } from '../lib/utils';
 
@@ -109,6 +110,7 @@ function prettyDetails(details) {
 
 export default function Settings() {
   const { user: me } = useAuth();
+  const { salleNom } = useConfig();
   const toast = useToast();
   const isManager = me?.role === 'manager';
   const [tab, setTab]     = useState('profil');
@@ -119,6 +121,24 @@ export default function Settings() {
   const [modal, setModal] = useState(null);
   const [backing, setBacking] = useState(false);
   const [backupError, setBackupError] = useState(null);
+  const [seedingBallancourt, setSeedingBallancourt] = useState(false);
+  const [seedBallancourtResult, setSeedBallancourtResult] = useState(null);
+
+  async function handleSeedBallancourt() {
+    setSeedingBallancourt(true);
+    setSeedBallancourtResult(null);
+    try {
+      const res = await api.seedBallancourt();
+      setSeedBallancourtResult({
+        ok: true,
+        message: `${res.seancesCreees} séance(s) et ${res.joursCreees} jour(s) de planning personnel importés (${res.seancesIgnorees} séance(s) et ${res.joursIgnores} jour(s) déjà présents ignorés).`,
+      });
+    } catch (err) {
+      setSeedBallancourtResult({ ok: false, message: err.message });
+    } finally {
+      setSeedingBallancourt(false);
+    }
+  }
 
   const loadAudit = (offset = 0) => {
     api.getAuditLog({ ...auditFilters, limit: AUDIT_PAGE, offset }).then(rows => {
@@ -272,6 +292,21 @@ export default function Settings() {
             </tbody>
           </table>
           </div>
+
+          {/* Import ponctuel de l'historique Ballancourt — visible uniquement sur cette instance */}
+          {salleNom === 'Ballancourt-sur-Essonne' && (
+            <div className="mt-6 text-right">
+              <button onClick={handleSeedBallancourt} disabled={seedingBallancourt}
+                className="text-xs text-gray-400 hover:text-gray-600 hover:underline disabled:opacity-50">
+                {seedingBallancourt ? 'Import…' : "⬇ Importer l'historique Ballancourt (cours, coachs, séances, planning personnel)"}
+              </button>
+              {seedBallancourtResult && (
+                <div className={`text-xs mt-1 ${seedBallancourtResult.ok ? 'text-green-600' : 'text-red-500'}`}>
+                  {seedBallancourtResult.ok ? '' : 'Erreur : '}{seedBallancourtResult.message}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Sauvegarde — discrète (usage exceptionnel) */}
           <div className="mt-6 text-right">

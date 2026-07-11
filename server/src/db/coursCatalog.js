@@ -14,6 +14,7 @@ module.exports = [
   { nom: 'Aquastep',             categorie: 'aqua' },
   { nom: 'Aquafusion',           categorie: 'aqua' },
   { nom: 'Aquatrampoline',       categorie: 'aqua' },
+  { nom: 'Aquacircuit',          categorie: 'aqua' },
   // Fitness (bike)
   { nom: 'Biking',               categorie: 'fitness' },
   { nom: 'RPM',                  categorie: 'fitness' },
@@ -51,4 +52,15 @@ module.exports = [
   { nom: 'MMA Grappling',        categorie: 'fitness' },
   { nom: 'Pole dance',           categorie: 'fitness' },
   { nom: 'Forest Training',      categorie: 'fitness' },
+  { nom: '100% Attack',          categorie: 'fitness' },
+  { nom: 'Body Sculpt',          categorie: 'fitness' },
+  { nom: 'Fit Dance',            categorie: 'fitness' },
+  { nom: 'Gym douce',            categorie: 'fitness' },
+  { nom: 'MMA Conf',             categorie: 'fitness' },
+  { nom: 'MMA Deb',              categorie: 'fitness' },
+  { nom: 'Sprint 30',            categorie: 'fitness' },
+  { nom: 'Stretching',           categorie: 'fitness' },
+  { nom: 'Yoga',                 categorie: 'fitness' },
+  { nom: 'Initiation musculation', categorie: 'fitness' },
+  { nom: 'Workout',              categorie: 'fitness' },
 ];

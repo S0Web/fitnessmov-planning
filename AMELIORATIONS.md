@@ -213,6 +213,30 @@ chaque déploiement (`npm ci && npm run build --workspace=client && node scripts
 de copie cross-platform à créer) et retirer `server/public` du repo (`.gitignore`). À ne faire que si
 l'utilisateur est à l'aise avec la config Railway. **Effort M.**
 
+### 24. ✅ Sélecteur de cours avec recherche + ajout inline — CORRIGÉ
+Le `<select>` de cours dans `SeanceModal.jsx` est remplacé par `CoursCombobox.jsx` : recherche
+insensible aux accents/casse, résultats groupés par catégorie (Aqua/Fitness), et un bouton
+« + Ajouter « {recherche} » en Aqua/Fitness » quand aucun cours ne correspond exactement — crée le
+cours via `POST /api/cours-types` et le sélectionne immédiatement, sans recharger la page.
+
+### 25. ✅ Import des données Ballancourt-sur-Essonne — CORRIGÉ
+Import complet demandé explicitement par l'utilisateur (catalogue + historique complet) à partir de
+`Planning_des_cours.xlsx` et `Planning_personnel_ballancourt.xlsx` :
+- **Catalogue** : 12 cours propres à Ballancourt ajoutés à `coursCatalog.js` (Aquacircuit, 100% Attack,
+  Body Sculpt, Fit Dance, Gym douce, MMA Conf, MMA Deb, Sprint 30, Stretching, Yoga, Initiation
+  musculation, Workout) après comparaison insensible aux accents/casse/espaces avec le catalogue
+  existant (ex. « body barre » → rattaché à l'existant « Bodybarre », pas dupliqué).
+- **Coachs** : 23 coachs canonicalisés (fusion des variantes de casse/faute de frappe, ex.
+  « wiliam »/« amine »/« imene » → William/Amine/Imane).
+- **Séances** : 2412 séances historiques (`server/src/db/ballancourtSeances.js`), statut brut de la
+  feuille mappé vers programme/effectué/annulé avec conservation du motif en note (Férié, Coach absent,
+  Pas assez d'adhérents, etc). Pointeur non renseigné (colonne source ambiguë, ne contenait pas
+  fiablement un nom de personne).
+- **Planning personnel** : 1204 jours (9 employés) importés dans `personnel_creneaux`.
+- Import réalisé via `server/src/db/seedBallancourt.js`, déclenché par un bouton manager discret dans
+  Paramètres (visible uniquement quand `SALLE_NOM=Ballancourt-sur-Essonne`), idempotent (ne recrée
+  jamais une séance ou un jour déjà présent).
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

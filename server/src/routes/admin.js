@@ -3,6 +3,7 @@ const path = require('path');
 const router = express.Router();
 const { requireManager } = require('../middleware/auth');
 const { run: importPersonnelHistorique } = require('../db/seedPersonnel');
+const { run: importBallancourt } = require('../db/seedBallancourt');
 const db = require('../db/database');
 
 // Même résolution de chemin que server/src/db/database.js
@@ -13,6 +14,22 @@ const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../data/fitnessm
 router.post('/seed-personnel', requireManager, (req, res) => {
   try {
     const result = importPersonnelHistorique();
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/admin/seed-ballancourt — importe le catalogue de cours, les coachs et
+// l'historique complet (séances + planning personnel) de Ballancourt-sur-Essonne.
+// Réservé à l'instance Ballancourt (SALLE_NOM) pour éviter tout risque sur les autres
+// salles. N'écrase jamais une donnée déjà présente, peut être relancé sans risque.
+router.post('/seed-ballancourt', requireManager, (req, res) => {
+  if (process.env.SALLE_NOM !== 'Ballancourt-sur-Essonne') {
+    return res.status(403).json({ error: "Import réservé à l'instance Ballancourt-sur-Essonne." });
+  }
+  try {
+    const result = importBallancourt();
     res.json({ ok: true, ...result });
   } catch (e) {
     res.status(500).json({ error: e.message });

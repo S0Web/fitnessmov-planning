@@ -82,6 +82,7 @@ export const api = {
     req('/personnel-creneaux/dupliquer', { method: 'POST', body: JSON.stringify({ semaine_source, semaine_cible }) }),
 
   // Admin
+  seedBallancourt: () => req('/admin/seed-ballancourt', { method: 'POST' }),
   downloadBackup: async () => {
     const token = getToken();
     const res = await fetch(`${BASE}/admin/backup`, {
