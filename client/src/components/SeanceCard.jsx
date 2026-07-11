@@ -86,7 +86,8 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
           className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide leading-none flex-shrink-0
             ${statut.bg} ${statut.text} hover:opacity-80 transition-opacity`}
         >
-          {statut.shortLabel || statut.label}
+          <span className="sm:hidden">{statut.shortLabel || statut.label}</span>
+          <span className="hidden sm:inline">{statut.label}</span>
         </button>
 
         <div className="flex-shrink-0">
