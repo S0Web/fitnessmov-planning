@@ -64,6 +64,12 @@ export const api = {
   getCoursTypes: () => req('/cours-types'),
   createCoursType: (nom, categorie) => req('/cours-types', { method: 'POST', body: JSON.stringify({ nom, categorie }) }),
 
+  // Annuaire
+  getAnnuaire:          () => req('/annuaire'),
+  createAnnuaireContact: (data) => req('/annuaire', { method: 'POST', body: JSON.stringify(data) }),
+  updateAnnuaireContact: (id, data) => req(`/annuaire/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteAnnuaireContact: (id) => req(`/annuaire/${id}`, { method: 'DELETE' }),
+
   // Séances
   getSeances:      (semaine) => req(`/seances${semaine ? `?semaine=${semaine}` : ''}`),
   createSeance:    (data) => req('/seances', { method: 'POST', body: JSON.stringify(data) }),

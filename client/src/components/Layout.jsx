@@ -8,6 +8,7 @@ const links = [
   { to: '/',                   label: 'Planning des cours' },
   { to: '/planning-personnel', label: 'Planning personnel' },
   { to: '/coaches',             label: 'Coaches' },
+  { to: '/annuaire',           label: 'Annuaire' },
 ];
 
 function Bubble({ user, size = 'h-7 w-7' }) {

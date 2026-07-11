@@ -246,6 +246,26 @@ plus aucun manager actif, promeut automatiquement un profil de secours nommé en
 Ballancourt). Ne fait rien tant qu'un manager actif existe déjà (sans risque de laisser tourner
 indéfiniment), et ne s'applique qu'à la salle ciblée via `SALLE_NOM`.
 
+### 27. ✅ Fix responsive des cartes de séance — CORRIGÉ
+Sur mobile, le badge de statut (« EFFECTUÉ ») et le badge d'effectif se chevauchaient sur les cartes
+étroites de la vue Grille. Ajout d'un `shortLabel` par statut (Programmé→Prog., Effectué→Eff.) utilisé
+uniquement dans `SeanceCard.jsx` (le libellé complet reste dans `SeanceModal`), et `flex-shrink-0` sur
+les deux badges pour empêcher tout débordement.
+
+### 28. ✅ Filtre par catégorie (Aqua/Fitness) — CORRIGÉ
+Le menu « Filtrer par… » du Planning des cours groupe maintenant les cours par catégorie avec une case
+« Aqua »/« Fitness » qui coche ou décoche en un clic tous les cours de la catégorie, en plus des cases
+individuelles déjà présentes.
+
+### 29. ✅ Onglet Annuaire — AJOUTÉ
+Nouvel onglet listant coachs (avec tags Aqua/Fitness, un coach pouvant avoir les deux), prestataires,
+employés et responsables, avec recherche (nom/téléphone/notes), filtre par catégorie, clic-pour-appeler
+(`tel:`) et CRUD complet (`server/src/routes/annuaire.js`, table `annuaire_contacts`). Ballancourt
+démarre avec un annuaire vide (à remplir par le gérant) ; Corbeil est pré-rempli au démarrage depuis
+`server/src/db/annuaireCorbeil.js` si la table est vide — **fichier de données volontairement laissé
+vide dans ce commit**, la transcription des contacts réels (numéros de téléphone personnels) sera
+ajoutée séparément après confirmation explicite de l'utilisateur (données sensibles).
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

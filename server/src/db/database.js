@@ -425,4 +425,18 @@ tryAlter('ALTER TABLE seances ADD COLUMN pointeur_user_id INTEGER REFERENCES app
   }
 })();
 
+// ─── Annuaire (coachs, prestataires, employés, responsables) ───
+db.run(`
+  CREATE TABLE IF NOT EXISTS annuaire_contacts (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    categorie   TEXT NOT NULL CHECK(categorie IN ('coach', 'prestataire', 'employe', 'responsable')),
+    nom         TEXT NOT NULL,
+    telephone   TEXT,
+    aqua        INTEGER NOT NULL DEFAULT 0,
+    fitness     INTEGER NOT NULL DEFAULT 0,
+    notes       TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
 module.exports = db;

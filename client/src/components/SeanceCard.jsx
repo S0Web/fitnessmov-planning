@@ -82,14 +82,16 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
       <div className="flex items-center justify-between mt-1 gap-1">
         <button
           onClick={cycleStatut}
-          title="Changer le statut"
-          className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide leading-none
+          title={statut.label}
+          className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide leading-none flex-shrink-0
             ${statut.bg} ${statut.text} hover:opacity-80 transition-opacity`}
         >
-          {statut.label}
+          {statut.shortLabel || statut.label}
         </button>
 
-        <HeadcountPopover value={seance.nb_presents} onSelect={(n) => onPatch(seance.id, { nb_presents: n })} />
+        <div className="flex-shrink-0">
+          <HeadcountPopover value={seance.nb_presents} onSelect={(n) => onPatch(seance.id, { nb_presents: n })} />
+        </div>
       </div>
 
       {/* Supprimer (hover) */}

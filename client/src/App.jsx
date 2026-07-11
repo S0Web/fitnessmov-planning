@@ -7,6 +7,7 @@ import ProfilePicker from './pages/ProfilePicker';
 import Planning from './pages/Planning';
 import PlanningPersonnel from './pages/PlanningPersonnel';
 import Coaches from './pages/Coaches';
+import Annuaire from './pages/Annuaire';
 import Settings from './pages/Settings';
 
 function ProtectedRoutes() {
@@ -23,6 +24,7 @@ function ProtectedRoutes() {
         <Route path="/"                   element={<Planning />} />
         <Route path="/planning-personnel" element={<PlanningPersonnel />} />
         <Route path="/coaches"            element={<Coaches />} />
+        <Route path="/annuaire"           element={<Annuaire />} />
         <Route path="/parametres"         element={<Settings />} />
         <Route path="*"                   element={<Navigate to="/" replace />} />
       </Routes>

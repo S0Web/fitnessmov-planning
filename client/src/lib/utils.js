@@ -1,10 +1,10 @@
 export const JOURS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
 export const STATUT_CONFIG = {
-  programme: { label: 'Programmé', bg: 'bg-gray-200',    text: 'text-gray-700',  solid: 'bg-gray-400' },
-  effectue:  { label: 'Effectué',  bg: 'bg-green-500',   text: 'text-white',     solid: 'bg-green-500' },
-  annule:    { label: 'Annulé',    bg: 'bg-red-500',     text: 'text-white',     solid: 'bg-red-500' },
-  paye:      { label: 'Payé',      bg: 'bg-emerald-700', text: 'text-white',     solid: 'bg-emerald-700' },
+  programme: { label: 'Programmé', shortLabel: 'Prog.',  bg: 'bg-gray-200',    text: 'text-gray-700',  solid: 'bg-gray-400' },
+  effectue:  { label: 'Effectué',  shortLabel: 'Eff.',   bg: 'bg-green-500',   text: 'text-white',     solid: 'bg-green-500' },
+  annule:    { label: 'Annulé',    shortLabel: 'Annulé', bg: 'bg-red-500',     text: 'text-white',     solid: 'bg-red-500' },
+  paye:      { label: 'Payé',      shortLabel: 'Payé',   bg: 'bg-emerald-700', text: 'text-white',     solid: 'bg-emerald-700' },
 };
 
 export const CATEGORIE_CONFIG = {

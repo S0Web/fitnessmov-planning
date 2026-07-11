@@ -11,6 +11,9 @@ require('./db/database');
 const { seedDefaults } = require('./db/seedDefaults');
 seedDefaults(); // remplit le catalogue de cours si la base est vierge (nouvelle salle)
 
+const { seedAnnuaire } = require('./db/seedAnnuaire');
+seedAnnuaire(); // pré-remplit l'annuaire sur Corbeil-Essonnes si la table est vide
+
 const { recoverManager } = require('./db/recoverManager');
 recoverManager('Ballancourt-sur-Essonne', 'Sofiann'); // filet de sécurité si le seul manager a été supprimé définitivement
 
@@ -26,6 +29,7 @@ const dashboardRouter = require('./routes/dashboard');
 const appUsersRouter  = require('./routes/appUsers');
 const tasksRouter     = require('./routes/tasks');
 const personnelCreneauxRouter = require('./routes/personnelCreneaux');
+const annuaireRouter  = require('./routes/annuaire');
 const adminRouter     = require('./routes/admin');
 
 const app  = express();
@@ -60,6 +64,7 @@ app.use('/api/dashboard',   requireAuth, dashboardRouter);
 app.use('/api/app-users',   appUsersRouter);
 app.use('/api/tasks',       requireAuth, tasksRouter);
 app.use('/api/personnel-creneaux',  requireAuth, personnelCreneauxRouter);
+app.use('/api/annuaire',   requireAuth, annuaireRouter);
 app.use('/api/admin', adminRouter);
 
 // Servir le front

@@ -321,6 +321,23 @@ export default function Planning() {
     });
   }
 
+  function toggleFiltreCategorie(categorie) {
+    const ids = coursTypes.filter(ct => ct.categorie === categorie).map(ct => ct.id);
+    setFiltreCours(prev => {
+      const tousCoches = ids.length > 0 && ids.every(id => prev.has(id));
+      const next = new Set(prev);
+      ids.forEach(id => tousCoches ? next.delete(id) : next.add(id));
+      return next;
+    });
+  }
+
+  const coursTypesParCategorie = useMemo(() => {
+    return coursTypes.reduce((acc, ct) => {
+      (acc[ct.categorie] ||= []).push(ct);
+      return acc;
+    }, {});
+  }, [coursTypes]);
+
   const filteredSeances = useMemo(
     () => (filtreCours.size === 0 ? seances : seances.filter(s => filtreCours.has(s.cours_type_id))),
     [seances, filtreCours]
@@ -349,17 +366,35 @@ export default function Planning() {
             )}
           </div>
           <div className="max-h-56 overflow-y-auto px-3 pb-2 space-y-0.5">
-            {coursTypes.map(ct => (
-              <label key={ct.id} className="flex items-center gap-1.5 py-0.5 cursor-pointer hover:text-gray-900 text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={filtreCours.has(ct.id)}
-                  onChange={() => toggleFiltre(ct.id)}
-                  className="rounded accent-sky-500"
-                />
-                <span className="truncate">{ct.nom}</span>
-              </label>
-            ))}
+            {[['aqua', 'Aqua'], ['fitness', 'Fitness']].map(([cat, label]) => {
+              const items = coursTypesParCategorie[cat] || [];
+              if (items.length === 0) return null;
+              const tousCoches = items.every(ct => filtreCours.has(ct.id));
+              return (
+                <div key={cat} className="mb-1">
+                  <label className="flex items-center gap-1.5 py-0.5 cursor-pointer hover:text-gray-900 text-gray-700 font-semibold">
+                    <input
+                      type="checkbox"
+                      checked={tousCoches}
+                      onChange={() => toggleFiltreCategorie(cat)}
+                      className="rounded accent-sky-500"
+                    />
+                    <span>{label}</span>
+                  </label>
+                  {items.map(ct => (
+                    <label key={ct.id} className="flex items-center gap-1.5 py-0.5 pl-4 cursor-pointer hover:text-gray-900 text-gray-600">
+                      <input
+                        type="checkbox"
+                        checked={filtreCours.has(ct.id)}
+                        onChange={() => toggleFiltre(ct.id)}
+                        className="rounded accent-sky-500"
+                      />
+                      <span className="truncate">{ct.nom}</span>
+                    </label>
+                  ))}
+                </div>
+              );
+            })}
             {coursTypes.length === 0 && <p className="text-gray-400 italic py-1">Aucun cours</p>}
           </div>
         </div>
