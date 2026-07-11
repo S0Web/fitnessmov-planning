@@ -148,7 +148,7 @@ export default function Annuaire() {
   }, [filtered]);
 
   return (
-    <div className="space-y-4 max-w-2xl">
+    <div className="space-y-4 max-w-2xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-lg font-bold text-gray-800">Annuaire</h1>
         <button onClick={() => setModal({})}
