@@ -94,7 +94,7 @@ export default function TaskWidget({ lundi }) {
           <select value={assignTo} onChange={e => setAssignTo(e.target.value)}
             className="w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-sky-300">
             <option value="">Pour moi</option>
-            {users.filter(u => u.id !== user?.id).map(u => (
+            {users.filter(u => u.id !== user?.id && u.actif).map(u => (
               <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>
             ))}
           </select>

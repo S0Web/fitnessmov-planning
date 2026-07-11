@@ -69,17 +69,29 @@ router.delete('/:id', requireManager, (req, res) => {
   res.json({ ok: true });
 });
 
-// GET /api/app-users/audit?limit&offset — historique (manager), paginé
+// GET /api/app-users/audit — historique (manager), paginé + filtres/tri
+// Params : limit, offset, action, user_id, from (YYYY-MM-DD), to (YYYY-MM-DD), order (asc|desc)
 router.get('/audit', requireManager, (req, res) => {
   const limit  = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 200);
   const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
+  const order  = req.query.order === 'asc' ? 'ASC' : 'DESC';
+
+  const where = [];
+  const params = [];
+  if (req.query.action)  { where.push('a.action = ?');           params.push(req.query.action); }
+  if (req.query.user_id) { where.push('a.user_id = ?');          params.push(Number(req.query.user_id)); }
+  if (req.query.from)    { where.push('date(a.created_at) >= ?'); params.push(req.query.from); }
+  if (req.query.to)      { where.push('date(a.created_at) <= ?'); params.push(req.query.to); }
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+
   const logs = db.all(`
     SELECT a.*, u.prenom || ' ' || u.nom AS user_nom
     FROM audit_log a
     LEFT JOIN app_users u ON u.id = a.user_id
-    ORDER BY a.created_at DESC
+    ${whereSql}
+    ORDER BY a.created_at ${order}
     LIMIT ? OFFSET ?
-  `, [limit, offset]);
+  `, [...params, limit, offset]);
   res.json(logs);
 });
 

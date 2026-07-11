@@ -8,7 +8,6 @@ const links = [
   { to: '/',                   label: 'Planning des cours' },
   { to: '/planning-personnel', label: 'Planning personnel' },
   { to: '/coaches',             label: 'Coaches' },
-  { to: '/parametres',         label: 'Paramètres' },
 ];
 
 function Bubble({ user, size = 'h-7 w-7' }) {
@@ -19,6 +18,15 @@ function Bubble({ user, size = 'h-7 w-7' }) {
     >
       {user.prenom?.[0]}{user.nom?.[0]}
     </span>
+  );
+}
+
+function GearIcon({ className }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 3.75h3l.4 2.1a6.6 6.6 0 011.7.98l2-.82 1.5 2.6-1.6 1.28a6.7 6.7 0 010 1.96l1.6 1.28-1.5 2.6-2-.82a6.6 6.6 0 01-1.7.98l-.4 2.1h-3l-.4-2.1a6.6 6.6 0 01-1.7-.98l-2 .82-1.5-2.6 1.6-1.28a6.7 6.7 0 010-1.96L3.4 8.61l1.5-2.6 2 .82a6.6 6.6 0 011.7-.98l.4-2.1z" />
+      <circle cx="12" cy="12" r="2.5" />
+    </svg>
   );
 }
 
@@ -59,17 +67,27 @@ export default function Layout({ children }) {
             ))}
           </nav>
 
-          {/* Profil desktop */}
+          {/* Profil + réglages desktop */}
           {user && (
-            <button
-              onClick={switchProfile}
-              title="Changer de profil"
-              aria-label="Changer de profil"
-              className="hidden md:flex ml-auto items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-white/10 transition-colors"
-            >
-              <Bubble user={user} />
-              <span className="text-sm text-sky-100">{user.prenom}</span>
-            </button>
+            <div className="hidden md:flex ml-auto items-center gap-1">
+              <button
+                onClick={switchProfile}
+                title="Changer de profil"
+                aria-label="Changer de profil"
+                className="flex items-center gap-2 rounded-full pl-1 pr-3 py-1 hover:bg-white/10 transition-colors"
+              >
+                <Bubble user={user} />
+                <span className="text-sm text-sky-100">{user.prenom}</span>
+              </button>
+              <NavLink
+                to="/parametres"
+                title="Paramètres"
+                aria-label="Paramètres"
+                className={({ isActive }) => `p-1.5 rounded-full transition-colors ${isActive ? 'bg-white/20 text-white' : 'text-sky-100 hover:bg-white/10'}`}
+              >
+                <GearIcon className="h-5 w-5" />
+              </NavLink>
+            </div>
           )}
 
           {/* Burger mobile */}
@@ -106,6 +124,17 @@ export default function Layout({ children }) {
                 {label}
               </NavLink>
             ))}
+            <NavLink
+              to="/parametres"
+              onClick={() => setMenuOpen(false)}
+              className={({ isActive }) =>
+                `flex items-center gap-2 px-3 py-2.5 rounded text-sm font-medium transition-colors ${
+                  isActive ? 'bg-white/20 text-white' : 'text-sky-100 hover:bg-white/10'
+                }`
+              }
+            >
+              <GearIcon className="h-5 w-5" /> Paramètres
+            </NavLink>
             {user && (
               <button
                 onClick={() => { setMenuOpen(false); switchProfile(); }}

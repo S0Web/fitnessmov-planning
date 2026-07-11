@@ -115,23 +115,28 @@ export default function Settings() {
   const [users, setUsers] = useState([]);
   const [audit, setAudit] = useState([]);
   const [auditHasMore, setAuditHasMore] = useState(false);
+  const [auditFilters, setAuditFilters] = useState({ action: '', user_id: '', from: '', to: '', order: 'desc' });
   const [modal, setModal] = useState(null);
   const [backing, setBacking] = useState(false);
   const [backupError, setBackupError] = useState(null);
 
   const loadAudit = (offset = 0) => {
-    api.getAuditLog(AUDIT_PAGE, offset).then(rows => {
+    api.getAuditLog({ ...auditFilters, limit: AUDIT_PAGE, offset }).then(rows => {
       setAudit(prev => offset === 0 ? rows : [...prev, ...rows]);
       setAuditHasMore(rows.length === AUDIT_PAGE);
     }).catch(() => {});
   };
 
   useEffect(() => {
-    if (isManager) {
-      api.getAppUsers().then(setUsers).catch(() => {});
-      if (tab === 'audit') loadAudit(0);
-    }
-  }, [isManager, tab]);
+    if (isManager) api.getAppUsers().then(setUsers).catch(() => {});
+  }, [isManager]);
+
+  useEffect(() => {
+    if (isManager && tab === 'audit') loadAudit(0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isManager, tab, auditFilters]);
+
+  function setAuditFilter(k, v) { setAuditFilters(f => ({ ...f, [k]: v })); }
 
   async function handleSave(form) {
     try {
@@ -282,6 +287,43 @@ export default function Settings() {
       {/* Historique */}
       {tab === 'audit' && isManager && (
         <div>
+          {/* Filtres & tri */}
+          <div className="flex flex-wrap items-end gap-2 mb-3 text-xs">
+            <label className="flex flex-col gap-0.5">
+              <span className="text-gray-500">Action</span>
+              <select value={auditFilters.action} onChange={e => setAuditFilter('action', e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-300">
+                <option value="">Toutes</option>
+                {Object.entries(ACTION_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-0.5">
+              <span className="text-gray-500">Utilisateur</span>
+              <select value={auditFilters.user_id} onChange={e => setAuditFilter('user_id', e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-300">
+                <option value="">Tous</option>
+                {users.map(u => <option key={u.id} value={u.id}>{u.prenom} {u.nom}</option>)}
+              </select>
+            </label>
+            <label className="flex flex-col gap-0.5">
+              <span className="text-gray-500">Du</span>
+              <input type="date" value={auditFilters.from} onChange={e => setAuditFilter('from', e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-300" />
+            </label>
+            <label className="flex flex-col gap-0.5">
+              <span className="text-gray-500">Au</span>
+              <input type="date" value={auditFilters.to} onChange={e => setAuditFilter('to', e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-300" />
+            </label>
+            <button onClick={() => setAuditFilter('order', auditFilters.order === 'desc' ? 'asc' : 'desc')}
+              className="px-2.5 py-1.5 border border-gray-300 rounded text-gray-600 hover:bg-gray-100">
+              {auditFilters.order === 'desc' ? '↓ Récent' : '↑ Ancien'}
+            </button>
+            {(auditFilters.action || auditFilters.user_id || auditFilters.from || auditFilters.to) && (
+              <button onClick={() => setAuditFilters({ action: '', user_id: '', from: '', to: '', order: auditFilters.order })}
+                className="px-2.5 py-1.5 text-sky-600 hover:underline">Réinitialiser</button>
+            )}
+          </div>
           <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
             <table className="w-full border-collapse text-xs min-w-[560px]">
               <thead>

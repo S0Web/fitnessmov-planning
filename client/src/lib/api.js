@@ -40,7 +40,10 @@ export const api = {
   createAppUser:  (data) => req('/app-users', { method: 'POST', body: JSON.stringify(data) }),
   updateAppUser:  (id, data) => req(`/app-users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteAppUser:  (id) => req(`/app-users/${id}`, { method: 'DELETE' }),
-  getAuditLog:    (limit = 200, offset = 0) => req(`/app-users/audit?limit=${limit}&offset=${offset}`),
+  getAuditLog:    (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
+    return req(`/app-users/audit${qs ? `?${qs}` : ''}`);
+  },
 
   // Tâches
   getTasks:    (semaine, user_id) => req(`/tasks?semaine=${semaine || ''}${user_id ? `&user_id=${user_id}` : ''}`),
