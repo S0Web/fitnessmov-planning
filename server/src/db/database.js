@@ -425,7 +425,8 @@ tryAlter('ALTER TABLE seances ADD COLUMN pointeur_user_id INTEGER REFERENCES app
   }
 })();
 
-// ─── Annuaire (coachs, prestataires, employés, responsables) ───
+// ─── Annuaire (prestataires, employés, responsables — les coachs vivent dans
+// la table `coaches`, pas ici, pour ne pas dupliquer la même donnée) ───
 db.run(`
   CREATE TABLE IF NOT EXISTS annuaire_contacts (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -438,5 +439,11 @@ db.run(`
     created_at  TEXT NOT NULL DEFAULT (datetime('now'))
   )
 `);
+// Nettoyage : les contacts "coach" ont été déplacés vers la table coaches (aqua/fitness).
+db.run("DELETE FROM annuaire_contacts WHERE categorie = 'coach'");
+
+// ─── Coachs : disciplines (Aqua/Fitness), affichées dans l'Annuaire ───
+tryAlter('ALTER TABLE coaches ADD COLUMN aqua INTEGER NOT NULL DEFAULT 0');
+tryAlter('ALTER TABLE coaches ADD COLUMN fitness INTEGER NOT NULL DEFAULT 0');
 
 module.exports = db;

@@ -2,12 +2,27 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
-const CATEGORIES = ['coach', 'prestataire', 'employe', 'responsable'];
+// Les coachs sont gérés depuis /api/coaches (table coaches) pour ne pas dupliquer
+// la même donnée à deux endroits ; ici on ne CRUD que les autres catégories.
+const CATEGORIES = ['prestataire', 'employe', 'responsable'];
 
-// GET /api/annuaire
+// GET /api/annuaire — fusionne les coachs (table coaches) et les autres contacts
+// (table annuaire_contacts) en une seule liste.
 router.get('/', (req, res) => {
-  const rows = db.all('SELECT * FROM annuaire_contacts ORDER BY categorie, nom');
-  res.json(rows);
+  const coachs = db.all('SELECT id, prenom, nom, telephone, aqua, fitness FROM coaches WHERE actif = 1 AND supprime = 0 ORDER BY prenom, nom')
+    .map(c => ({
+      id: `coach-${c.id}`,
+      categorie: 'coach',
+      nom: `${c.prenom} ${c.nom}`.trim(),
+      telephone: c.telephone,
+      aqua: c.aqua,
+      fitness: c.fitness,
+      notes: null,
+      readonly: true,
+    }));
+  const autres = db.all('SELECT * FROM annuaire_contacts ORDER BY categorie, nom')
+    .map(c => ({ ...c, readonly: false }));
+  res.json([...coachs, ...autres]);
 });
 
 // POST /api/annuaire

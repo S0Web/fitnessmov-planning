@@ -109,6 +109,8 @@ function CoachModal({ coach, onSave, onToggle, onDelete, onClose }) {
     prenom:    coach?.prenom    || '',
     email:     coach?.email     || '',
     telephone: coach?.telephone || '',
+    aqua:      coach?.aqua      || false,
+    fitness:   coach?.fitness   || false,
   });
   const [error, setSaving2] = useState(null);
   const [saving, setSaving]  = useState(false);
@@ -184,6 +186,19 @@ function CoachModal({ coach, onSave, onToggle, onDelete, onClose }) {
             <label className="block text-xs font-medium text-gray-600 mb-1">Téléphone</label>
             <input value={form.telephone} onChange={e => set('telephone', e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Discipline(s)</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" checked={form.aqua} onChange={e => set('aqua', e.target.checked)} className="rounded accent-sky-500" />
+                Aqua
+              </label>
+              <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                <input type="checkbox" checked={form.fitness} onChange={e => set('fitness', e.target.checked)} className="rounded accent-amber-500" />
+                Fitness
+              </label>
+            </div>
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}

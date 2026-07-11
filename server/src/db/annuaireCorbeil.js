@@ -3,26 +3,9 @@
 // librement depuis l'onglet Annuaire. Ballancourt démarre volontairement avec un
 // annuaire vide (à remplir par le gérant). Contact "Weno" volontairement omis
 // (rayé sur la fiche source, numéro obsolète).
+// Les coachs ne sont PAS ici : ils vivent dans la table `coaches` (voir
+// server/src/db/coachTagsCorbeil.js pour leurs disciplines Aqua/Fitness + téléphone).
 module.exports = [
-  // Coachs
-  { categorie: 'coach', nom: 'Vincent',   telephone: '06 99 77 02 57', aqua: true,  fitness: false },
-  { categorie: 'coach', nom: 'Steve',     telephone: '06 03 45 08 27', aqua: true,  fitness: false },
-  { categorie: 'coach', nom: 'Cédric',    telephone: '06 79 54 37 99', aqua: false, fitness: true },
-  { categorie: 'coach', nom: 'Myriam',    telephone: '07 49 89 29 51', aqua: false, fitness: false, notes: 'Contrat' },
-  { categorie: 'coach', nom: 'Fatou',     telephone: '07 49 29 82 12', aqua: false, fitness: true },
-  { categorie: 'coach', nom: 'Halim',     telephone: '06 14 51 91 01', aqua: false, fitness: true },
-  { categorie: 'coach', nom: 'Imane',     telephone: '06 12 19 89 53', aqua: true,  fitness: true },
-  { categorie: 'coach', nom: 'William',   telephone: '06 60 31 18 44', aqua: false, fitness: true },
-  { categorie: 'coach', nom: 'Eya',       telephone: '07 68 15 11 20', aqua: false, fitness: true },
-  { categorie: 'coach', nom: 'Jen',       telephone: '06 70 48 04 72', aqua: false, fitness: true, notes: 'Pole' },
-  { categorie: 'coach', nom: 'Clarisse',  telephone: '07 69 07 24 57', aqua: false, fitness: true, notes: 'Pole' },
-  { categorie: 'coach', nom: 'Sarah',     telephone: '06 85 30 82 96', aqua: false, fitness: true, notes: 'Pole' },
-  { categorie: 'coach', nom: 'Moktar',    telephone: '06 20 38 56 46', aqua: true,  fitness: true },
-  { categorie: 'coach', nom: 'Myriam',    telephone: '07 61 43 36 00', aqua: true,  fitness: false },
-  { categorie: 'coach', nom: 'Philippe',  telephone: '06 85 84 31 79', aqua: true,  fitness: false },
-  { categorie: 'coach', nom: 'Renaud',    telephone: '06 63 06 15 01', aqua: true,  fitness: false },
-  { categorie: 'coach', nom: 'Bénédicte', telephone: '07 70 04 02 89', aqua: false, fitness: true, notes: 'Pole' },
-
   // Responsables
   { categorie: 'responsable', nom: 'SMS',    telephone: '06 27 69 21 12' },
   { categorie: 'responsable', nom: 'Djamel', telephone: '07 70 11 01 03' },

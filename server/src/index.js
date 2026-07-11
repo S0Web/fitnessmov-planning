@@ -14,6 +14,9 @@ seedDefaults(); // remplit le catalogue de cours si la base est vierge (nouvelle
 const { seedAnnuaire } = require('./db/seedAnnuaire');
 seedAnnuaire(); // pré-remplit l'annuaire sur Corbeil-Essonnes si la table est vide
 
+const { backfillCoachTags } = require('./db/backfillCoachTags');
+backfillCoachTags('Corbeil-Essonnes', require('./db/coachTagsCorbeil'));
+
 const { recoverManager } = require('./db/recoverManager');
 recoverManager('Ballancourt-sur-Essonne', 'Sofiann'); // filet de sécurité si le seul manager a été supprimé définitivement
 

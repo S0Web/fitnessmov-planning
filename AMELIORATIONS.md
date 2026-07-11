@@ -278,6 +278,16 @@ d'import restant idempotent (déduplication par date+horaire+cours_type_id), rel
 "Importer l'historique Ballancourt" depuis Paramètres ajoute uniquement les ~990 séances manquantes sans
 toucher à ce qui est déjà en base.
 
+### 31. ✅ Annuaire : coachs dédupliqués avec Coaches + fix layout — CORRIGÉ
+Les coachs de l'Annuaire étaient une copie de la même donnée que la table `coaches` (deux endroits à
+maintenir en parallèle). Ajout de `aqua`/`fitness` sur `coaches` (réutilise le `telephone` déjà existant) ;
+`GET /api/annuaire` fusionne maintenant les coachs (lecture seule, lien « Gérer dans Coaches → ») avec les
+autres contacts (`annuaire_contacts`, toujours éditables ici). `CoachModal` (Coaches.jsx) gagne les cases
+Aqua/Fitness. Backfill one-shot (`backfillCoachTags.js`) qui complète les coachs Corbeil déjà en base avec
+téléphone + disciplines transcrits de la fiche papier, sans jamais écraser une modification manuelle
+(s'arrête dès qu'un coach a déjà une discipline ou un téléphone). Layout : lignes contraintes en largeur
+(`max-w-2xl`) pour rapprocher nom et téléphone sur desktop, fond alterné (zebra) comme les autres tableaux.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

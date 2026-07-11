@@ -1,14 +1,18 @@
 import { useState, useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
 
-const CATEGORIES = [
+// Catégories affichées (filtres + sections). Les coachs viennent de la table
+// coaches (lecture seule ici) — pour les modifier, direction l'onglet Coaches.
+const DISPLAY_CATEGORIES = [
   { id: 'coach',       label: 'Coachs' },
   { id: 'prestataire', label: 'Prestataires' },
   { id: 'employe',     label: 'Employés' },
   { id: 'responsable', label: 'Responsables' },
 ];
-const CATEGORIE_LABEL = Object.fromEntries(CATEGORIES.map(c => [c.id, c.label]));
+// Catégories qu'on peut créer/modifier depuis cette page.
+const EDITABLE_CATEGORIES = DISPLAY_CATEGORIES.filter(c => c.id !== 'coach');
 
 function norm(s) {
   return (s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
@@ -17,11 +21,9 @@ function norm(s) {
 function ContactModal({ contact, onSave, onDelete, onClose }) {
   const isNew = !contact?.id;
   const [form, setForm] = useState({
-    categorie: contact?.categorie || 'coach',
+    categorie: contact?.categorie || 'prestataire',
     nom:       contact?.nom       || '',
     telephone: contact?.telephone || '',
-    aqua:      contact?.aqua      || false,
-    fitness:   contact?.fitness   || false,
     notes:     contact?.notes     || '',
   });
   const [error, setError] = useState(null);
@@ -67,7 +69,7 @@ function ContactModal({ contact, onSave, onDelete, onClose }) {
             <label className="block text-xs font-medium text-gray-600 mb-1">Catégorie *</label>
             <select value={form.categorie} onChange={e => set('categorie', e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400">
-              {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+              {EDITABLE_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
             </select>
           </div>
 
@@ -82,22 +84,6 @@ function ContactModal({ contact, onSave, onDelete, onClose }) {
             <input value={form.telephone} onChange={e => set('telephone', e.target.value)}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
           </div>
-
-          {form.categorie === 'coach' && (
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Discipline(s)</label>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                  <input type="checkbox" checked={form.aqua} onChange={e => set('aqua', e.target.checked)} className="rounded accent-sky-500" />
-                  Aqua
-                </label>
-                <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                  <input type="checkbox" checked={form.fitness} onChange={e => set('fitness', e.target.checked)} className="rounded accent-amber-500" />
-                  Fitness
-                </label>
-              </div>
-            </div>
-          )}
 
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
@@ -156,13 +142,13 @@ export default function Annuaire() {
   }, [contacts, search, categorieFiltre]);
 
   const groupes = useMemo(() => {
-    return CATEGORIES
+    return DISPLAY_CATEGORIES
       .map(c => ({ ...c, items: filtered.filter(x => x.categorie === c.id) }))
       .filter(g => g.items.length > 0);
   }, [filtered]);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 max-w-2xl">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h1 className="text-lg font-bold text-gray-800">Annuaire</h1>
         <button onClick={() => setModal({})}
@@ -184,7 +170,7 @@ export default function Annuaire() {
             className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${categorieFiltre === 'tous' ? 'bg-sky-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
             Tous
           </button>
-          {CATEGORIES.map(c => (
+          {DISPLAY_CATEGORIES.map(c => (
             <button key={c.id} onClick={() => setCategorieFiltre(c.id)}
               className={`text-xs px-3 py-1.5 rounded-full font-medium transition-colors ${categorieFiltre === c.id ? 'bg-sky-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
               {c.label}
@@ -201,11 +187,16 @@ export default function Annuaire() {
         <div className="space-y-6">
           {groupes.map(g => (
             <div key={g.id}>
-              <h2 className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">{g.label}</h2>
-              <div className="bg-white border border-gray-200 rounded-lg divide-y divide-gray-100">
-                {g.items.map(c => (
-                  <div key={c.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                    <button onClick={() => setModal(c)} className="flex items-center gap-2 min-w-0 text-left hover:underline">
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xs font-bold uppercase tracking-wide text-gray-500">{g.label}</h2>
+                {g.id === 'coach' && (
+                  <Link to="/coaches" className="text-xs text-sky-600 hover:underline">Gérer dans Coaches →</Link>
+                )}
+              </div>
+              <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                {g.items.map((c, i) => {
+                  const nameContent = (
+                    <span className="flex items-center gap-2 min-w-0">
                       <span className="font-medium text-gray-800 truncate">{c.nom}</span>
                       {c.categorie === 'coach' && (
                         <span className="flex gap-1 flex-shrink-0">
@@ -214,15 +205,25 @@ export default function Annuaire() {
                         </span>
                       )}
                       {c.notes && <span className="text-xs text-gray-400 truncate">({c.notes})</span>}
-                    </button>
-                    {c.telephone && (
-                      <a href={`tel:${c.telephone.replace(/\s+/g, '')}`} onClick={e => e.stopPropagation()}
-                        className="text-sm text-sky-600 hover:underline flex-shrink-0 tabular-nums">
-                        {c.telephone}
-                      </a>
-                    )}
-                  </div>
-                ))}
+                    </span>
+                  );
+                  return (
+                    <div key={c.id} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f9fafb' }}
+                      className="flex items-center justify-between gap-3 px-4 py-2.5">
+                      {c.readonly ? (
+                        <Link to="/coaches" className="min-w-0 hover:underline">{nameContent}</Link>
+                      ) : (
+                        <button onClick={() => setModal(c)} className="min-w-0 text-left hover:underline">{nameContent}</button>
+                      )}
+                      {c.telephone && (
+                        <a href={`tel:${c.telephone.replace(/\s+/g, '')}`} onClick={e => e.stopPropagation()}
+                          className="text-sm text-sky-600 hover:underline flex-shrink-0 tabular-nums">
+                          {c.telephone}
+                        </a>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
