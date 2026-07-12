@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
+import { DISCIPLINE_CONFIG } from '../lib/utils';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -106,12 +107,15 @@ function LineChart({ data, xKey, yKey, color = '#5bcae8', label = '' }) {
 function CoachModal({ coach, onSave, onToggle, onDelete, onClose }) {
   const isNew = !coach?.id;
   const [form, setForm] = useState({
-    nom:       coach?.nom       || '',
-    prenom:    coach?.prenom    || '',
-    email:     coach?.email     || '',
-    telephone: coach?.telephone || '',
-    aqua:      coach?.aqua      || false,
-    fitness:   coach?.fitness   || false,
+    nom:           coach?.nom           || '',
+    prenom:        coach?.prenom        || '',
+    email:         coach?.email         || '',
+    telephone:     coach?.telephone     || '',
+    aqua:          coach?.aqua          || false,
+    fitness:       coach?.fitness       || false,
+    boxe:          coach?.boxe          || false,
+    crosstraining: coach?.crosstraining || false,
+    poledance:     coach?.poledance     || false,
   });
   const [error, setSaving2] = useState(null);
   const [saving, setSaving]  = useState(false);
@@ -173,8 +177,8 @@ function CoachModal({ coach, onSave, onToggle, onDelete, onClose }) {
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Nom *</label>
-              <input value={form.nom} onChange={e => set('nom', e.target.value)} required
+              <label className="block text-xs font-medium text-gray-600 mb-1">Nom</label>
+              <input value={form.nom} onChange={e => set('nom', e.target.value)}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
             </div>
           </div>
@@ -190,15 +194,13 @@ function CoachModal({ coach, onSave, onToggle, onDelete, onClose }) {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">Discipline(s)</label>
-            <div className="flex gap-4">
-              <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" checked={form.aqua} onChange={e => set('aqua', e.target.checked)} className="rounded accent-sky-500" />
-                Aqua
-              </label>
-              <label className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
-                <input type="checkbox" checked={form.fitness} onChange={e => set('fitness', e.target.checked)} className="rounded accent-amber-500" />
-                Fitness
-              </label>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {Object.entries(DISCIPLINE_CONFIG).map(([key, cfg]) => (
+                <label key={key} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                  <input type="checkbox" checked={form[key]} onChange={e => set(key, e.target.checked)} className={`rounded ${cfg.accent}`} />
+                  {cfg.label}
+                </label>
+              ))}
             </div>
           </div>
           <div className="flex gap-2 pt-1">

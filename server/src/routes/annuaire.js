@@ -9,14 +9,18 @@ const CATEGORIES = ['prestataire', 'employe', 'responsable'];
 // GET /api/annuaire — fusionne les coachs (table coaches) et les autres contacts
 // (table annuaire_contacts) en une seule liste.
 router.get('/', (req, res) => {
-  const coachs = db.all('SELECT id, prenom, nom, telephone, aqua, fitness FROM coaches WHERE actif = 1 AND supprime = 0 ORDER BY prenom, nom')
+  const coachs = db.all('SELECT id, prenom, nom, telephone, aqua, fitness, boxe, crosstraining, poledance FROM coaches WHERE actif = 1 AND supprime = 0 ORDER BY prenom, nom')
     .map(c => ({
       id: `coach-${c.id}`,
+      coachId: c.id,
       categorie: 'coach',
       nom: `${c.prenom} ${c.nom}`.trim(),
       telephone: c.telephone,
       aqua: c.aqua,
       fitness: c.fitness,
+      boxe: c.boxe,
+      crosstraining: c.crosstraining,
+      poledance: c.poledance,
       notes: null,
       readonly: true,
     }));

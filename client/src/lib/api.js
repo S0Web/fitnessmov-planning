@@ -57,6 +57,7 @@ export const api = {
   getCoaches:      (tous = false) => req(`/coaches${tous ? '?tous=1' : ''}`),
   createCoach:     (data) => req('/coaches', { method: 'POST', body: JSON.stringify(data) }),
   updateCoach:     (id, data) => req(`/coaches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  patchCoach:      (id, data) => req(`/coaches/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
   toggleCoach:     (id, actif) => req(`/coaches/${id}/actif`, { method: 'PATCH', body: JSON.stringify({ actif }) }),
   deleteCoach:     (id, definitif) => req(`/coaches/${id}${definitif ? '?definitif=1' : ''}`, { method: 'DELETE' }),
 

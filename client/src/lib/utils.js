@@ -12,6 +12,15 @@ export const CATEGORIE_CONFIG = {
   fitness: { bg: 'bg-fitness-light', border: 'border-fitness', dot: 'bg-fitness', hdr: '#c9a464', cell: '#fdf6ec' },
 };
 
+// Disciplines des coachs — utilisé par la fiche Coach (Coaches.jsx) et l'Annuaire.
+export const DISCIPLINE_CONFIG = {
+  aqua:          { label: 'Aqua',          bg: 'bg-sky-100',     text: 'text-sky-700',     accent: 'accent-sky-500' },
+  fitness:       { label: 'Fitness',       bg: 'bg-amber-100',   text: 'text-amber-700',   accent: 'accent-amber-500' },
+  boxe:          { label: 'Boxe',          bg: 'bg-red-100',     text: 'text-red-700',     accent: 'accent-red-500' },
+  crosstraining: { label: 'Crosstraining', bg: 'bg-emerald-100', text: 'text-emerald-700', accent: 'accent-emerald-500' },
+  poledance:     { label: 'Pole Dance',    bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', accent: 'accent-fuchsia-500' },
+};
+
 // Palette déterministe pour les bulles de profil (façon PlayStation)
 const BUBBLE_PALETTE = ['#2fa8cc', '#c9a464', '#8b5cf6', '#ef4444', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
 export function colorForUser(id) {

@@ -3,16 +3,18 @@ import { Link } from 'react-router-dom';
 import { Plus } from 'lucide-react';
 import { api } from '../lib/api';
 import { useToast } from '../context/ToastContext';
+import { DISCIPLINE_CONFIG } from '../lib/utils';
 
 // Catégories affichées (filtres + sections). Les coachs viennent de la table
-// coaches (lecture seule ici) — pour les modifier, direction l'onglet Coaches.
+// coaches — modifiables ici (téléphone + disciplines) via une fiche allégée ;
+// pour le nom/email, direction l'onglet Coaches.
 const DISPLAY_CATEGORIES = [
   { id: 'coach',       label: 'Coachs' },
   { id: 'prestataire', label: 'Prestataires' },
   { id: 'employe',     label: 'Employés' },
   { id: 'responsable', label: 'Responsables' },
 ];
-// Catégories qu'on peut créer/modifier depuis cette page.
+// Catégories qu'on peut créer depuis cette page (les coachs se créent depuis Coaches).
 const EDITABLE_CATEGORIES = DISPLAY_CATEGORIES.filter(c => c.id !== 'coach');
 
 function norm(s) {
@@ -107,6 +109,79 @@ function ContactModal({ contact, onSave, onDelete, onClose }) {
   );
 }
 
+function CoachQuickEditModal({ coach, onSave, onClose }) {
+  const [form, setForm] = useState({
+    telephone: coach.telephone || '',
+    ...Object.fromEntries(Object.keys(DISCIPLINE_CONFIG).map(k => [k, !!coach[k]])),
+  });
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError(null);
+    setSaving(true);
+    try {
+      await onSave(form);
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  useEffect(() => {
+    const fn = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm" onClick={e => e.stopPropagation()}>
+        <div className="px-6 pt-5 pb-4 border-b flex items-center justify-between">
+          <h2 className="text-lg font-bold text-gray-800">{coach.nom}</h2>
+          <Link to="/coaches" onClick={onClose} className="text-xs text-sky-600 hover:underline">Gérer dans Coaches →</Link>
+        </div>
+        <form onSubmit={handleSubmit} className="px-6 py-4 space-y-3">
+          {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">{error}</div>}
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Téléphone</label>
+            <input value={form.telephone} onChange={e => set('telephone', e.target.value)}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Discipline(s)</label>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {Object.entries(DISCIPLINE_CONFIG).map(([key, cfg]) => (
+                <label key={key} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                  <input type="checkbox" checked={form[key]} onChange={e => set(key, e.target.checked)} className={`rounded ${cfg.accent}`} />
+                  {cfg.label}
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose}
+              className="flex-1 border border-gray-300 text-gray-600 rounded py-2 text-sm hover:bg-gray-50">Annuler</button>
+            <button type="submit" disabled={saving}
+              className="flex-1 text-white rounded py-2 text-sm font-medium disabled:opacity-50"
+              style={{ backgroundColor: '#2fa8cc' }}>
+              {saving ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export default function Annuaire() {
   const toast = useToast();
   const [contacts, setContacts] = useState([]);
@@ -122,8 +197,13 @@ export default function Annuaire() {
   useEffect(() => { load(); }, []);
 
   async function handleSave(form) {
-    if (modal?.id) await api.updateAnnuaireContact(modal.id, form);
-    else           await api.createAnnuaireContact(form);
+    if (modal?.categorie === 'coach') {
+      await api.patchCoach(modal.coachId, form);
+    } else if (modal?.id) {
+      await api.updateAnnuaireContact(modal.id, form);
+    } else {
+      await api.createAnnuaireContact(form);
+    }
     load();
   }
   async function handleDelete(contact) {
@@ -197,12 +277,13 @@ export default function Annuaire() {
               <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
                 {g.items.map((c, i) => {
                   const nameContent = (
-                    <span className="flex items-center gap-2 min-w-0">
+                    <span className="flex items-center gap-2 min-w-0 flex-wrap">
                       <span className="font-medium text-gray-800 truncate">{c.nom}</span>
                       {c.categorie === 'coach' && (
-                        <span className="flex gap-1 flex-shrink-0">
-                          {!!c.aqua && <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-sky-100 text-sky-700">Aqua</span>}
-                          {!!c.fitness && <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">Fitness</span>}
+                        <span className="flex gap-1 flex-wrap">
+                          {Object.entries(DISCIPLINE_CONFIG).map(([key, cfg]) => (
+                            !!c[key] && <span key={key} className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${cfg.bg} ${cfg.text}`}>{cfg.label}</span>
+                          ))}
                         </span>
                       )}
                       {c.notes && <span className="text-xs text-gray-400 truncate">({c.notes})</span>}
@@ -211,11 +292,7 @@ export default function Annuaire() {
                   return (
                     <div key={c.id} style={{ backgroundColor: i % 2 === 0 ? '#ffffff' : '#f9fafb' }}
                       className="flex items-center justify-between gap-3 px-4 py-2.5">
-                      {c.readonly ? (
-                        <Link to="/coaches" className="min-w-0 hover:underline">{nameContent}</Link>
-                      ) : (
-                        <button onClick={() => setModal(c)} className="min-w-0 text-left hover:underline">{nameContent}</button>
-                      )}
+                      <button onClick={() => setModal(c)} className="min-w-0 text-left hover:underline">{nameContent}</button>
                       {c.telephone && (
                         <a href={`tel:${c.telephone.replace(/\s+/g, '')}`} onClick={e => e.stopPropagation()}
                           className="text-sm text-sky-600 hover:underline flex-shrink-0 tabular-nums">
@@ -231,14 +308,20 @@ export default function Annuaire() {
         </div>
       )}
 
-      {modal !== null && (
+      {modal !== null && (modal.categorie === 'coach' ? (
+        <CoachQuickEditModal
+          coach={modal}
+          onSave={handleSave}
+          onClose={() => setModal(null)}
+        />
+      ) : (
         <ContactModal
           contact={modal?.id ? modal : null}
           onSave={handleSave}
           onDelete={handleDelete}
           onClose={() => setModal(null)}
         />
-      )}
+      ))}
     </div>
   );
 }

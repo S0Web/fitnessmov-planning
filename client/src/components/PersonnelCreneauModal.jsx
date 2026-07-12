@@ -7,6 +7,7 @@ const TYPES = [
   { id: 'ecole',   label: 'École' },
   { id: 'ferie',   label: 'Férié' },
   { id: 'arret',   label: 'Arrêt' },
+  { id: 'absent',  label: 'Absent' },
   { id: 'repos',   label: 'Repos' },
 ];
 

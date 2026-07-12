@@ -295,6 +295,23 @@ SVG faits main — remplacés par des icônes `lucide-react` (`Settings`, `Menu`
 `Layout.jsx`, `Annuaire.jsx`, `Coaches.jsx`, `Settings.jsx`, `PlanningPersonnel.jsx`, `Planning.jsx`,
 `TaskWidget.jsx`, `CoursCombobox.jsx`, `PersonnelCreneauModal.jsx`.
 
+### 33. ✅ Coach : nom optionnel, édition rapide depuis l'Annuaire, 3 nouvelles disciplines — CORRIGÉ
+- `nom` n'est plus obligatoire pour un coach (seul `prenom` l'est), côté API et formulaire.
+- Nouvelle route `PATCH /api/coaches/:id` (téléphone + disciplines uniquement, sans repasser par le nom
+  complet) : cliquer sur un coach dans l'Annuaire ouvre une fiche allégée (téléphone + disciplines) au
+  lieu de rediriger vers Coaches — le lien « Gérer dans Coaches » reste disponible pour le nom/email.
+- 3 nouvelles disciplines : Boxe, Crosstraining, Pole Dance (colonnes `coaches.boxe/crosstraining/poledance`),
+  affichées dans `CoachModal` et l'Annuaire à côté d'Aqua/Fitness.
+- Correction ponctuelle : les 4 coachs Corbeil tagués « Pole » sur la fiche papier (Jen, Clarisse, Sarah,
+  Bénédicte) avaient été transcrits par erreur en Fitness (avant l'existence du tag Pole Dance) — corrigés
+  automatiquement au démarrage (Pole Dance au lieu de Fitness).
+
+### 34. ✅ Type "Absent" réintroduit dans le planning personnel — CORRIGÉ
+Le type `absent` avait été fusionné dans `repos` plus tôt dans le projet (simplification demandée à
+l'époque) ; redemandé séparé, en rouge, pour bien le distinguer visuellement des autres absences. CHECK
+constraint `personnel_creneaux.type` élargi (`travail, cp, ecole, ferie, arret, repos, absent`), nouvelle
+option dans `PersonnelCreneauModal` et couleur dédiée (rouge plein) dans `PlanningPersonnel.jsx`.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

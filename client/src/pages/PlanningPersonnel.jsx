@@ -15,6 +15,7 @@ const TYPE_CONFIG = {
   ecole:  { label: 'École',  bg: '#d1fae5', text: '#065f46' },
   ferie:  { label: 'Férié',  bg: '#f3e8ff', text: '#6b21a8' },
   arret:  { label: 'Arrêt',  bg: '#fee2e2', text: '#991b1b' },
+  absent: { label: 'Absent', bg: '#ef4444', text: '#ffffff' },
   repos:  { label: 'Repos',  bg: '#f3f4f6', text: '#6b7280' },
 };
 

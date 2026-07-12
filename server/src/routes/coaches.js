@@ -12,7 +12,7 @@ router.get('/recap', (req, res) => {
   const debut = req.query.debut || defaultDebut;
   const fin   = req.query.fin   || defaultFin;
 
-  const coaches = db.all('SELECT id, prenom, nom, email, telephone, aqua, fitness, actif FROM coaches WHERE supprime = 0 ORDER BY prenom, nom');
+  const coaches = db.all('SELECT id, prenom, nom, email, telephone, aqua, fitness, boxe, crosstraining, poledance, actif FROM coaches WHERE supprime = 0 ORDER BY prenom, nom');
   const seances = db.all(
     `SELECT coach_id, SUBSTR(date,1,7) as mois, SUM(duree_minutes) as mins
      FROM seances
@@ -54,14 +54,15 @@ router.get('/:id', (req, res) => {
 
 // POST /api/coaches
 router.post('/', (req, res) => {
-  const { nom, prenom, email, telephone, aqua, fitness } = req.body;
-  if (!nom || !prenom) {
-    return res.status(400).json({ error: 'nom et prenom sont obligatoires' });
+  const { nom, prenom, email, telephone, aqua, fitness, boxe, crosstraining, poledance } = req.body;
+  if (!prenom || !prenom.trim()) {
+    return res.status(400).json({ error: 'prenom est obligatoire' });
   }
   try {
     const result = db.run(
-      'INSERT INTO coaches (nom, prenom, email, telephone, aqua, fitness) VALUES (?, ?, ?, ?, ?, ?)',
-      [nom.trim(), prenom.trim(), email?.trim() || null, telephone?.trim() || null, aqua ? 1 : 0, fitness ? 1 : 0]
+      'INSERT INTO coaches (nom, prenom, email, telephone, aqua, fitness, boxe, crosstraining, poledance) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [(nom || '').trim(), prenom.trim(), email?.trim() || null, telephone?.trim() || null,
+       aqua ? 1 : 0, fitness ? 1 : 0, boxe ? 1 : 0, crosstraining ? 1 : 0, poledance ? 1 : 0]
     );
     const created = db.get('SELECT * FROM coaches WHERE id = ?', [result.lastInsertRowid]);
     res.status(201).json(created);
@@ -75,17 +76,18 @@ router.post('/', (req, res) => {
 
 // PUT /api/coaches/:id — mise à jour complète
 router.put('/:id', (req, res) => {
-  const { nom, prenom, email, telephone, aqua, fitness } = req.body;
-  if (!nom || !prenom) {
-    return res.status(400).json({ error: 'nom et prenom sont obligatoires' });
+  const { nom, prenom, email, telephone, aqua, fitness, boxe, crosstraining, poledance } = req.body;
+  if (!prenom || !prenom.trim()) {
+    return res.status(400).json({ error: 'prenom est obligatoire' });
   }
   const existing = db.get('SELECT id FROM coaches WHERE id = ?', [req.params.id]);
   if (!existing) return res.status(404).json({ error: 'Coach introuvable' });
 
   try {
     db.run(
-      'UPDATE coaches SET nom = ?, prenom = ?, email = ?, telephone = ?, aqua = ?, fitness = ? WHERE id = ?',
-      [nom.trim(), prenom.trim(), email?.trim() || null, telephone?.trim() || null, aqua ? 1 : 0, fitness ? 1 : 0, req.params.id]
+      'UPDATE coaches SET nom = ?, prenom = ?, email = ?, telephone = ?, aqua = ?, fitness = ?, boxe = ?, crosstraining = ?, poledance = ? WHERE id = ?',
+      [(nom || '').trim(), prenom.trim(), email?.trim() || null, telephone?.trim() || null,
+       aqua ? 1 : 0, fitness ? 1 : 0, boxe ? 1 : 0, crosstraining ? 1 : 0, poledance ? 1 : 0, req.params.id]
     );
     res.json(db.get('SELECT * FROM coaches WHERE id = ?', [req.params.id]));
   } catch (err) {
@@ -94,6 +96,25 @@ router.put('/:id', (req, res) => {
     }
     throw err;
   }
+});
+
+// PATCH /api/coaches/:id — édition rapide (téléphone + disciplines), sans repasser
+// par le nom complet — utilisé par l'Annuaire pour modifier un coach sur place.
+router.patch('/:id', (req, res) => {
+  const existing = db.get('SELECT * FROM coaches WHERE id = ?', [req.params.id]);
+  if (!existing) return res.status(404).json({ error: 'Coach introuvable' });
+
+  const fields = ['telephone', 'aqua', 'fitness', 'boxe', 'crosstraining', 'poledance'];
+  const updates = {};
+  for (const f of fields) if (f in req.body) updates[f] = req.body[f];
+
+  const sets = Object.keys(updates).map(f => `${f} = ?`);
+  if (sets.length === 0) return res.json(existing);
+  const values = Object.entries(updates).map(([f, v]) =>
+    f === 'telephone' ? (v?.trim() || null) : (v ? 1 : 0)
+  );
+  db.run(`UPDATE coaches SET ${sets.join(', ')} WHERE id = ?`, [...values, req.params.id]);
+  res.json(db.get('SELECT * FROM coaches WHERE id = ?', [req.params.id]));
 });
 
 // PATCH /api/coaches/:id/actif — active/désactive

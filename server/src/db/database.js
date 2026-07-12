@@ -442,8 +442,53 @@ db.run(`
 // Nettoyage : les contacts "coach" ont été déplacés vers la table coaches (aqua/fitness).
 db.run("DELETE FROM annuaire_contacts WHERE categorie = 'coach'");
 
-// ─── Coachs : disciplines (Aqua/Fitness), affichées dans l'Annuaire ───
+// ─── Coachs : disciplines (affichées dans l'Annuaire) ───
 tryAlter('ALTER TABLE coaches ADD COLUMN aqua INTEGER NOT NULL DEFAULT 0');
 tryAlter('ALTER TABLE coaches ADD COLUMN fitness INTEGER NOT NULL DEFAULT 0');
+tryAlter('ALTER TABLE coaches ADD COLUMN boxe INTEGER NOT NULL DEFAULT 0');
+tryAlter('ALTER TABLE coaches ADD COLUMN crosstraining INTEGER NOT NULL DEFAULT 0');
+tryAlter('ALTER TABLE coaches ADD COLUMN poledance INTEGER NOT NULL DEFAULT 0');
+
+// Correction ponctuelle : 4 coachs Corbeil taggés "Pole" sur la fiche papier avaient
+// été transcrits par erreur en fitness=1 (avant l'ajout du tag Pole Dance dédié).
+// Idempotent : ne touche que les lignes encore dans l'état erroné.
+if (process.env.SALLE_NOM === 'Corbeil-Essonnes') {
+  for (const prenom of ['Jen', 'Clarisse', 'Sarah', 'Bénédicte']) {
+    db.run(
+      "UPDATE coaches SET fitness = 0, poledance = 1 WHERE lower(prenom) = lower(?) AND fitness = 1 AND poledance = 0",
+      [prenom]
+    );
+  }
+}
+
+// ─── Planning personnel : réintroduit "Absent" comme type distinct de "Repos" ───
+;(function reintroduceAbsent() {
+  try {
+    const sqlDef = db.get("SELECT sql FROM sqlite_master WHERE type='table' AND name='personnel_creneaux'");
+    if (!sqlDef || sqlDef.sql.includes("'absent'")) return;
+    db.run('BEGIN');
+    db.run(`CREATE TABLE personnel_creneaux_mig4 (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      employe_id  INTEGER NOT NULL REFERENCES app_users(id) ON DELETE CASCADE,
+      date        TEXT NOT NULL,
+      type        TEXT NOT NULL
+                  CHECK(type IN ('travail','cp','ecole','ferie','arret','repos','absent')),
+      debut       TEXT,
+      fin         TEXT,
+      ordre       INTEGER NOT NULL DEFAULT 0,
+      notes       TEXT,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    )`);
+    db.run('INSERT INTO personnel_creneaux_mig4 SELECT * FROM personnel_creneaux');
+    db.run('DROP TABLE personnel_creneaux');
+    db.run('ALTER TABLE personnel_creneaux_mig4 RENAME TO personnel_creneaux');
+    db.run('CREATE INDEX IF NOT EXISTS idx_personnel_creneaux_emp_date ON personnel_creneaux(employe_id, date)');
+    db.run('COMMIT');
+    console.log('✅ Migration : type "absent" réintroduit dans personnel_creneaux');
+  } catch (e) {
+    try { db.run('ROLLBACK'); } catch (_) {}
+    console.error('Migration reintroduceAbsent error:', e.message);
+  }
+})();
 
 module.exports = db;
