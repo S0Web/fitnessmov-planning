@@ -5,20 +5,20 @@ const { requireAuth, requireManager } = require('../middleware/auth');
 
 // GET /api/app-users — liste (manager seulement) — hors profils supprimés
 router.get('/', requireManager, (req, res) => {
-  const users = db.all('SELECT id, prenom, nom, email, role, actif, created_at FROM app_users WHERE supprime = 0 ORDER BY prenom, nom');
+  const users = db.all('SELECT id, prenom, nom, email, role, actif, date_debut_contrat, created_at FROM app_users WHERE supprime = 0 ORDER BY prenom, nom');
   res.json(users);
 });
 
 // POST /api/app-users — créer un profil (manager)
 router.post('/', requireManager, (req, res) => {
-  const { prenom, nom, email, role } = req.body;
+  const { prenom, nom, email, role, date_debut_contrat } = req.body;
   if (!prenom) return res.status(400).json({ error: 'Le prénom est requis' });
   try {
     const result = db.run(
-      'INSERT INTO app_users (prenom, nom, email, role) VALUES (?, ?, ?, ?)',
-      [prenom.trim(), (nom || '').trim(), email ? email.trim().toLowerCase() : null, role === 'manager' ? 'manager' : 'user']
+      'INSERT INTO app_users (prenom, nom, email, role, date_debut_contrat) VALUES (?, ?, ?, ?, ?)',
+      [prenom.trim(), (nom || '').trim(), email ? email.trim().toLowerCase() : null, role === 'manager' ? 'manager' : 'user', date_debut_contrat || null]
     );
-    const user = db.get('SELECT id, prenom, nom, email, role, actif FROM app_users WHERE id = ?', [result.lastInsertRowid]);
+    const user = db.get('SELECT id, prenom, nom, email, role, actif, date_debut_contrat FROM app_users WHERE id = ?', [result.lastInsertRowid]);
     db.run('INSERT INTO audit_log (user_id, action, entity, entity_id, details) VALUES (?, ?, ?, ?, ?)',
       [req.user.id, 'create_user', 'app_users', user.id, `${user.prenom} ${user.nom}`]);
     res.status(201).json(user);
@@ -34,27 +34,28 @@ router.put('/:id', requireAuth, (req, res) => {
   const isSelf    = req.user.id === Number(req.params.id);
   if (!isManager && !isSelf) return res.status(403).json({ error: 'Accès refusé' });
 
-  const { prenom, nom, email, role, actif } = req.body;
+  const { prenom, nom, email, role, actif, date_debut_contrat } = req.body;
   const user = db.get('SELECT * FROM app_users WHERE id = ?', [req.params.id]);
   if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
 
   const newRole = isManager && role ? (role === 'manager' ? 'manager' : 'user') : user.role;
   const newActif = isManager && actif !== undefined ? (actif ? 1 : 0) : user.actif;
+  const newDateDebut = isManager && date_debut_contrat !== undefined ? (date_debut_contrat || null) : user.date_debut_contrat;
 
   const newEmail = email !== undefined ? (email ? email.trim().toLowerCase() : null) : user.email;
 
   db.run(
-    'UPDATE app_users SET prenom=?, nom=?, email=?, role=?, actif=? WHERE id=?',
+    'UPDATE app_users SET prenom=?, nom=?, email=?, role=?, actif=?, date_debut_contrat=? WHERE id=?',
     [
       (prenom || user.prenom).trim(),
       (nom !== undefined ? nom : user.nom).trim(),
       newEmail,
-      newRole, newActif,
+      newRole, newActif, newDateDebut,
       req.params.id
     ]
   );
   if (!newActif) db.run('DELETE FROM sessions WHERE user_id = ?', [req.params.id]);
-  res.json(db.get('SELECT id, prenom, nom, email, role, actif FROM app_users WHERE id = ?', [req.params.id]));
+  res.json(db.get('SELECT id, prenom, nom, email, role, actif, date_debut_contrat FROM app_users WHERE id = ?', [req.params.id]));
 });
 
 // DELETE /api/app-users/:id — suppression définitive (soft : la ligne reste en DB

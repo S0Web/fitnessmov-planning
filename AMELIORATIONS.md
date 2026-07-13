@@ -330,6 +330,21 @@ Nouveau composant `SalleSwitcher.jsx`, discret en haut à droite de l'écran d'a
 avant connexion) et dans le header de l'appli (visible seulement pour un profil manager, à côté de la
 molette) — clique pour sauter directement sur l'autre salle.
 
+### 37. ✅ Fix URLs des salles + switcher retiré de la navbar — CORRIGÉ
+- URLs corrigées dans `salles.js` : `fitnessmov-corbeil.up.railway.app` / `fitnessmov-ballancourt.up.railway.app`
+  (les URLs devinées à l'étape précédente étaient fausses).
+- `SalleSwitcher` retiré du header et du menu mobile de l'appli (`Layout.jsx`) : il n'apparaît plus que
+  sur l'écran de sélection des profils, jamais dans la navbar une fois connecté.
+
+### 38. ✅ Cumul de congés payés — AJOUTÉ
+Nouveau champ `app_users.date_debut_contrat` (modifiable par un manager, champ date dans Paramètres >
+Utilisateurs). À partir de cette date, 2,5 jours de CP sont acquis par mois plein écoulé
+(`moisEcoules`/`soldeCp` dans `server/src/routes/personnelCreneaux.js`). Le widget CP du planning
+personnel affiche désormais, pour chaque employé (vue manager) ou pour soi-même : le nombre de CP pris
+sur l'année sélectionnée (comme avant) et, si une date de début de contrat est renseignée, le solde
+restant (acquis − pris cumulé depuis toujours, en vert si positif, en rouge si négatif). Sans date de
+début renseignée, seul le nombre pris s'affiche (comme avant).
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

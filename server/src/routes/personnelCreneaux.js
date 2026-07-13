@@ -21,6 +21,24 @@ function todayISO() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+// Nombre de mois pleins écoulés entre dateDebut (YYYY-MM-DD) et aujourd'hui.
+function moisEcoules(dateDebut) {
+  const [y1, m1, d1] = dateDebut.split('-').map(Number);
+  const debut = new Date(y1, m1 - 1, d1);
+  const today = new Date();
+  if (debut > today) return 0;
+  let mois = (today.getFullYear() - debut.getFullYear()) * 12 + (today.getMonth() - debut.getMonth());
+  if (today.getDate() < debut.getDate()) mois -= 1;
+  return Math.max(0, mois);
+}
+
+// Solde de CP : 2,5 jours acquis par mois complet depuis la date de début de contrat.
+function soldeCp(dateDebutContrat, totalPris) {
+  if (!dateDebutContrat) return { acquis: null, pris: totalPris, restant: null };
+  const acquis = Math.round(moisEcoules(dateDebutContrat) * 2.5 * 100) / 100;
+  return { acquis, pris: totalPris, restant: Math.round((acquis - totalPris) * 100) / 100 };
+}
+
 // GET /api/personnel-creneaux?semaine=YYYY-MM-DD
 router.get('/', (req, res) => {
   const { lundi, dimanche } = getSemaineBounds(req.query.semaine || todayISO());
@@ -35,26 +53,41 @@ router.get('/', (req, res) => {
   res.json(rows);
 });
 
-// GET /api/personnel-creneaux/cp-summary?annee=YYYY — nombre de CP pris sur l'année
-// (manager: tout le monde, sinon: soi-même). Année par défaut : année en cours.
+// GET /api/personnel-creneaux/cp-summary?annee=YYYY — CP pris sur l'année + solde cumulé
+// (2,5j/mois depuis la date de début de contrat). Manager : tout le monde. Sinon : soi-même.
 router.get('/cp-summary', (req, res) => {
   const annee = req.query.annee || String(new Date().getFullYear());
+
+  function withSolde(rows) {
+    return rows.map(r => {
+      const totalPris = db.get(
+        `SELECT COUNT(*) as n FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp'`,
+        [r.id]
+      ).n;
+      return { ...r, ...soldeCp(r.date_debut_contrat, totalPris), date_debut_contrat: undefined };
+    });
+  }
+
   if (req.user.role === 'manager') {
     const rows = db.all(`
-      SELECT u.id, u.prenom, u.nom, COUNT(*) as cp
-      FROM personnel_creneaux pc
-      JOIN app_users u ON u.id = pc.employe_id
-      WHERE pc.type = 'cp' AND u.actif = 1 AND strftime('%Y', pc.date) = ?
+      SELECT u.id, u.prenom, u.nom, u.date_debut_contrat, COUNT(pc.id) as cp
+      FROM app_users u
+      LEFT JOIN personnel_creneaux pc ON pc.employe_id = u.id AND pc.type = 'cp' AND strftime('%Y', pc.date) = ?
+      WHERE u.actif = 1
       GROUP BY u.id
+      HAVING cp > 0 OR u.date_debut_contrat IS NOT NULL
       ORDER BY u.prenom
     `, [annee]);
-    return res.json(rows);
+    return res.json(withSolde(rows));
   }
   const row = db.get(
-    `SELECT COUNT(*) as cp FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp' AND strftime('%Y', date) = ?`,
-    [req.user.id, annee]
+    `SELECT u.id, u.prenom, u.nom, u.date_debut_contrat, COUNT(pc.id) as cp
+     FROM app_users u
+     LEFT JOIN personnel_creneaux pc ON pc.employe_id = u.id AND pc.type = 'cp' AND strftime('%Y', pc.date) = ?
+     WHERE u.id = ?`,
+    [annee, req.user.id]
   );
-  res.json([{ id: req.user.id, prenom: req.user.prenom, nom: req.user.nom, cp: row.cp }]);
+  res.json(withSolde([row]));
 });
 
 // GET /api/personnel-creneaux/recap?debut&fin — heures travaillées + CP par employé par mois

@@ -14,6 +14,7 @@ function UserModal({ user, onSave, onClose }) {
     email:    user?.email    || '',
     role:     user?.role     || 'user',
     actif:    user?.actif    !== undefined ? user.actif : 1,
+    date_debut_contrat: user?.date_debut_contrat || '',
   });
   const [error, setError]   = useState(null);
   const [saving, setSaving] = useState(false);
@@ -71,6 +72,13 @@ function UserModal({ user, onSave, onClose }) {
                 </label>
               </div>
             )}
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Date de début de contrat</label>
+            <input type="date" value={form.date_debut_contrat}
+              onChange={e => setForm(f => ({ ...f, date_debut_contrat: e.target.value }))}
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+            <p className="text-[11px] text-gray-400 mt-1">Sert à calculer le cumul de CP (2,5 jours acquis par mois).</p>
           </div>
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}

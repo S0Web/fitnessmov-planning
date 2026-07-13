@@ -4,7 +4,6 @@ import { Settings as GearIcon, Menu as MenuIcon, X as XIcon } from 'lucide-react
 import { useAuth } from '../context/AuthContext';
 import { useConfig } from '../context/ConfigContext';
 import { colorForUser } from '../lib/utils';
-import SalleSwitcher from './SalleSwitcher';
 
 const links = [
   { to: '/',                   label: 'Planning des cours' },
@@ -64,7 +63,6 @@ export default function Layout({ children }) {
           {/* Profil + réglages desktop */}
           {user && (
             <div className="hidden md:flex ml-auto items-center gap-3">
-              {user.role === 'manager' && <SalleSwitcher currentSalle={salleNom} dark />}
               <button
                 onClick={switchProfile}
                 title="Changer de profil"
@@ -134,11 +132,6 @@ export default function Layout({ children }) {
                 <Bubble user={user} size="h-6 w-6" />
                 Changer de profil ({user.prenom})
               </button>
-            )}
-            {user?.role === 'manager' && (
-              <div className="px-3 py-2">
-                <SalleSwitcher currentSalle={salleNom} dark />
-              </div>
             )}
           </div>
         )}

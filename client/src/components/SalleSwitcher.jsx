@@ -4,7 +4,7 @@ import { SALLES } from '../lib/salles';
 
 // Petit lien discret pour sauter d'une salle à l'autre (Corbeil / Ballancourt).
 // Multi-salle non commercialisé : liste en dur dans lib/salles.js.
-export default function SalleSwitcher({ currentSalle, className = '', dark = false }) {
+export default function SalleSwitcher({ currentSalle, className = '' }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   const autres = SALLES.filter(s => s.nom !== currentSalle);
@@ -25,7 +25,7 @@ export default function SalleSwitcher({ currentSalle, className = '', dark = fal
         onClick={() => setOpen(o => !o)}
         title="Changer de salle"
         aria-label="Changer de salle"
-        className={`flex items-center gap-1 text-xs transition-colors ${dark ? 'text-sky-100 hover:text-white' : 'text-gray-400 hover:text-sky-600'}`}
+        className="flex items-center gap-1 text-xs text-gray-400 hover:text-sky-600 transition-colors"
       >
         <Building2 className="h-3.5 w-3.5" />
         {currentSalle || 'Salle'}

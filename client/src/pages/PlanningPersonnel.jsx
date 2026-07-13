@@ -46,7 +46,7 @@ function CpSummary({ isManager }) {
   return (
     <div className="mt-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-xs">
       <div className="flex items-center justify-between mb-2">
-        <span className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide">CP pris</span>
+        <span className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide">Congés payés</span>
         <div className="flex items-center gap-1">
           <button onClick={() => setAnnee(a => a - 1)} className="text-gray-400 hover:text-gray-600 px-1">‹</button>
           <span className="text-gray-600 font-medium tabular-nums">{annee}</span>
@@ -56,19 +56,22 @@ function CpSummary({ isManager }) {
       </div>
       {cp.length === 0 ? (
         <p className="text-gray-400 italic">Aucun CP sur {annee}.</p>
-      ) : isManager ? (
+      ) : (
         <div className="space-y-1.5">
           {cp.map(c => (
-            <div key={c.id} className="flex justify-between items-center text-gray-600">
-              <span>{c.prenom}</span>
-              <span className="font-semibold text-gray-700 tabular-nums">{c.cp}</span>
+            <div key={c.id} className="flex justify-between items-baseline text-gray-600">
+              <span>{isManager ? c.prenom : 'Mes CP'}</span>
+              <span className="text-right">
+                <span className="font-semibold text-gray-700 tabular-nums">{c.cp}</span>
+                <span className="text-gray-400"> pris</span>
+                {c.restant !== null && (
+                  <span className={`ml-2 font-semibold tabular-nums ${c.restant < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                    · {c.restant} restant{Math.abs(c.restant) >= 2 ? 's' : ''}
+                  </span>
+                )}
+              </span>
             </div>
           ))}
-        </div>
-      ) : (
-        <div className="flex justify-between items-center text-gray-600">
-          <span>Mes CP</span>
-          <span className="font-semibold text-gray-700 tabular-nums">{cp[0].cp}</span>
         </div>
       )}
     </div>

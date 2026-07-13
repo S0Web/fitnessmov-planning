@@ -494,4 +494,7 @@ if (process.env.SALLE_NOM === 'Corbeil-Essonnes') {
 // ─── Code confidentiel par profil (facultatif) ───
 tryAlter('ALTER TABLE app_users ADD COLUMN code_hash TEXT');
 
+// ─── Cumul de congés payés : date à partir de laquelle 2,5 jours/mois s'acquièrent ───
+tryAlter('ALTER TABLE app_users ADD COLUMN date_debut_contrat TEXT');
+
 module.exports = db;
