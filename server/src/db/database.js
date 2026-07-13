@@ -491,4 +491,7 @@ if (process.env.SALLE_NOM === 'Corbeil-Essonnes') {
   }
 })();
 
+// ─── Code confidentiel par profil (facultatif) ───
+tryAlter('ALTER TABLE app_users ADD COLUMN code_hash TEXT');
+
 module.exports = db;

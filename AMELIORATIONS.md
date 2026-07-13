@@ -312,6 +312,24 @@ l'époque) ; redemandé séparé, en rouge, pour bien le distinguer visuellement
 constraint `personnel_creneaux.type` élargi (`travail, cp, ecole, ferie, arret, repos, absent`), nouvelle
 option dans `PersonnelCreneauModal` et couleur dédiée (rouge plein) dans `PlanningPersonnel.jsx`.
 
+### 35. ✅ Code confidentiel par profil — AJOUTÉ
+`app_users.code_hash` (PBKDF2, `server/src/lib/codeHash.js`, sans dépendance externe), facultatif par
+profil. `GET /api/auth/profiles` expose `hasCode` (jamais le hash). Cliquer sur un profil sur l'écran
+d'accueil :
+- **A un code** → `CodeEntryModal` (code requis pour `POST /api/auth/select`, erreur si incorrect,
+  lien « Code oublié ? » → `POST /api/auth/forget-code` (reset sans vérification — volontairement peu
+  sécurisé pour l'instant, effet dissuasif en attendant un lien avec l'email) → bascule sur la création
+  d'un nouveau code, obligatoire cette fois).
+- **Pas de code** → `CreateCodeModal` proposant d'en créer un (`POST /api/auth/set-code`, refuse si un
+  code existe déjà — il faut passer par « oublié » pour le changer), avec un bouton « Plus tard » pour
+  continuer sans.
+
+### 36. ✅ Changer de salle (Corbeil/Ballancourt) — AJOUTÉ
+Multi-salle non commercialisé : liste en dur des deux URLs Railway connues (`client/src/lib/salles.js`).
+Nouveau composant `SalleSwitcher.jsx`, discret en haut à droite de l'écran d'accueil (visible de tous,
+avant connexion) et dans le header de l'appli (visible seulement pour un profil manager, à côté de la
+molette) — clique pour sauter directement sur l'autre salle.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

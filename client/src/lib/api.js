@@ -31,7 +31,9 @@ export const api = {
   // Auth
   getProfiles:    () => req('/auth/profiles'),
   createProfile:  (data) => req('/auth/profiles', { method: 'POST', body: JSON.stringify(data) }),
-  selectProfile:  (userId) => req('/auth/select', { method: 'POST', body: JSON.stringify({ user_id: userId }) }),
+  selectProfile:  (userId, code) => req('/auth/select', { method: 'POST', body: JSON.stringify({ user_id: userId, code }) }),
+  setCode:        (userId, code) => req('/auth/set-code', { method: 'POST', body: JSON.stringify({ user_id: userId, code }) }),
+  forgetCode:     (userId) => req('/auth/forget-code', { method: 'POST', body: JSON.stringify({ user_id: userId }) }),
   logout:   () => req('/auth/logout', { method: 'POST' }),
   me:       () => req('/auth/me'),
 

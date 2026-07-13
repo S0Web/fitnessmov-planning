@@ -36,8 +36,8 @@ export function AuthProvider({ children }) {
     setUser(newUser);
   }
 
-  async function selectProfile(userId) {
-    const res = await api.selectProfile(userId);
+  async function selectProfile(userId, code) {
+    const res = await api.selectProfile(userId, code);
     login(res.token, res.user);
   }
 
