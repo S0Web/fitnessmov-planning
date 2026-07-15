@@ -2,7 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../db/database');
 const { requireAuth, requireManager } = require('../middleware/auth');
-const { soldeCp } = require('../lib/cp');
+const { soldeCp, prisDepuisContrat } = require('../lib/cp');
 
 // GET /api/app-users — liste (manager seulement) — hors profils supprimés
 router.get('/', requireManager, (req, res) => {
@@ -13,7 +13,7 @@ router.get('/', requireManager, (req, res) => {
 function cpDetail(id) {
   const user = db.get('SELECT id, date_debut_contrat, cp_ajuste FROM app_users WHERE id = ?', [id]);
   if (!user) return null;
-  const pris = db.get(`SELECT COUNT(*) as n FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp'`, [id]).n;
+  const pris = prisDepuisContrat(id, user.date_debut_contrat);
   return { date_debut_contrat: user.date_debut_contrat, ...soldeCp(user.date_debut_contrat, user.cp_ajuste, pris) };
 }
 

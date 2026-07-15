@@ -1,3 +1,4 @@
+import { StickyNote } from 'lucide-react';
 import { STATUT_CONFIG } from '../lib/utils';
 import { nextStatut } from '../lib/statutCycle';
 import HeadcountPopover from './HeadcountPopover';
@@ -62,7 +63,9 @@ export default function SeanceCard({ seance, onPatch, onDelete, onClick }) {
           {formatHoraire(startMins)} – {formatHoraire(endMins)}
         </span>
         {seance.notes && (
-          <span title={seance.notes} className="text-[11px] leading-none cursor-help" aria-label="Cette séance a une note">📝</span>
+          <span title={seance.notes} className="text-gray-400 cursor-help" aria-label="Cette séance a une note">
+            <StickyNote className="h-3 w-3" />
+          </span>
         )}
       </div>
 

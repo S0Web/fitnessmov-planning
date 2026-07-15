@@ -98,21 +98,30 @@ router.put('/:id', (req, res) => {
   }
 });
 
-// PATCH /api/coaches/:id — édition rapide (téléphone + disciplines), sans repasser
-// par le nom complet — utilisé par l'Annuaire pour modifier un coach sur place.
+// Catégories supplémentaires que l'Annuaire autorise pour un coach (au-delà de "coach").
+const CATEGORIES_EXTRA_VALIDES = ['prestataire', 'employe', 'responsable'];
+
+// PATCH /api/coaches/:id — édition rapide (téléphone + disciplines + catégories annuaire
+// supplémentaires), sans repasser par le nom complet — utilisé par l'Annuaire pour
+// modifier un coach sur place.
 router.patch('/:id', (req, res) => {
   const existing = db.get('SELECT * FROM coaches WHERE id = ?', [req.params.id]);
   if (!existing) return res.status(404).json({ error: 'Coach introuvable' });
 
-  const fields = ['telephone', 'aqua', 'fitness', 'boxe', 'crosstraining', 'poledance'];
+  const fields = ['telephone', 'aqua', 'fitness', 'boxe', 'crosstraining', 'poledance', 'categories_extra'];
   const updates = {};
   for (const f of fields) if (f in req.body) updates[f] = req.body[f];
 
   const sets = Object.keys(updates).map(f => `${f} = ?`);
   if (sets.length === 0) return res.json(existing);
-  const values = Object.entries(updates).map(([f, v]) =>
-    f === 'telephone' ? (v?.trim() || null) : (v ? 1 : 0)
-  );
+  const values = Object.entries(updates).map(([f, v]) => {
+    if (f === 'telephone') return v?.trim() || null;
+    if (f === 'categories_extra') {
+      const list = Array.isArray(v) ? v : [];
+      return list.filter(c => CATEGORIES_EXTRA_VALIDES.includes(c)).join(',');
+    }
+    return v ? 1 : 0;
+  });
   db.run(`UPDATE coaches SET ${sets.join(', ')} WHERE id = ?`, [...values, req.params.id]);
   res.json(db.get('SELECT * FROM coaches WHERE id = ?', [req.params.id]));
 });

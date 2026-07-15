@@ -2,6 +2,20 @@
 // date de début de contrat, plus un ajustement manuel (cp_ajuste) que le manager peut
 // modifier librement (reprise d'ancienneté, régularisation, etc.).
 
+const db = require('../db/database');
+
+// Compte les CP posés par un employé, à partir de sa date de contrat (les CP posés
+// avant ne comptent pas). Sans date de contrat, compte tout l'historique. `extraWhere`
+// permet de restreindre davantage (ex. sur une année/un mois) via des paramètres liés.
+function prisDepuisContrat(employeId, dateDebutContrat, extraWhere = '', extraParams = []) {
+  const gate = dateDebutContrat ? 'AND date >= ?' : '';
+  const gateParams = dateDebutContrat ? [dateDebutContrat] : [];
+  return db.get(
+    `SELECT COUNT(*) as n FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp' ${gate} ${extraWhere}`,
+    [employeId, ...gateParams, ...extraParams]
+  ).n;
+}
+
 // Nombre de mois pleins écoulés entre dateDebut (YYYY-MM-DD) et aujourd'hui.
 function moisEcoules(dateDebut) {
   const [y1, m1, d1] = dateDebut.split('-').map(Number);
@@ -27,4 +41,4 @@ function soldeCp(dateDebutContrat, cpAjuste, totalPris) {
   };
 }
 
-module.exports = { moisEcoules, soldeCp };
+module.exports = { moisEcoules, soldeCp, prisDepuisContrat };

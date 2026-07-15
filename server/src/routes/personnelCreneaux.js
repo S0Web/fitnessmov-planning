@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 const { upsertJour } = require('../db/personnelWrite');
-const { soldeCp } = require('../lib/cp');
+const { soldeCp, prisDepuisContrat } = require('../lib/cp');
 
 function getSemaineBounds(iso) {
   const [y, m, d] = iso.split('-').map(Number);
@@ -37,27 +37,20 @@ router.get('/', (req, res) => {
 });
 
 // GET /api/personnel-creneaux/cp-summary — CP pris ce mois / cette année + solde cumulé
-// (2,5j/mois depuis la date de début de contrat, + ajustement manuel). Manager : tout le
-// monde (actifs). Sinon : soi-même.
+// (2,5j/mois depuis la date de début de contrat, + ajustement manuel ; les CP posés
+// avant la date de contrat ne comptent pas). Seuls les profils avec une date de contrat
+// renseignée apparaissent (sans date = CDD/extra, pas de suivi de cumul). Manager : tout
+// le monde (actifs). Sinon : soi-même.
 router.get('/cp-summary', (req, res) => {
   const now = new Date();
   const anneeCourante = String(now.getFullYear());
   const moisCourant = `${anneeCourante}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
   function withDetails(rows) {
-    return rows.map(r => {
-      const totalPris = db.get(
-        `SELECT COUNT(*) as n FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp'`,
-        [r.id]
-      ).n;
-      const prisAnnee = db.get(
-        `SELECT COUNT(*) as n FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp' AND strftime('%Y', date) = ?`,
-        [r.id, anneeCourante]
-      ).n;
-      const prisMois = db.get(
-        `SELECT COUNT(*) as n FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp' AND strftime('%Y-%m', date) = ?`,
-        [r.id, moisCourant]
-      ).n;
+    return rows.filter(r => r.date_debut_contrat).map(r => {
+      const totalPris = prisDepuisContrat(r.id, r.date_debut_contrat);
+      const prisAnnee = prisDepuisContrat(r.id, r.date_debut_contrat, `AND strftime('%Y', date) = ?`, [anneeCourante]);
+      const prisMois = prisDepuisContrat(r.id, r.date_debut_contrat, `AND strftime('%Y-%m', date) = ?`, [moisCourant]);
       const { restant } = soldeCp(r.date_debut_contrat, r.cp_ajuste, totalPris);
       return { id: r.id, prenom: r.prenom, nom: r.nom, prisMois, prisAnnee, restant };
     });

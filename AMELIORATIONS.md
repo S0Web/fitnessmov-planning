@@ -362,6 +362,26 @@ complété au lot #39 ci-dessous (ajustement manuel + refonte du widget).
   salle n'a encore aucun profil) et bouton « + employé » retiré du planning personnel — toute création
   passe désormais par Paramètres > Utilisateurs (manager).
 
+### 40. ✅ CP : seuls les congés pris depuis la date de contrat comptent, widget masqué sans date — CORRIGÉ
+Les congés posés **avant** la date de début de contrat étaient comptés dans « pris », faussant le solde
+(ex. un profil avec beaucoup de CP historiques important d'un ancien suivi papier). `prisDepuisContrat()`
+(`server/src/lib/cp.js`) ne compte désormais que les CP à partir de la date de contrat (sans date : compte
+tout, comme avant — utilisé uniquement dans la fiche manager). Le widget CP du planning personnel
+n'affiche plus que les profils **ayant une date de contrat renseignée** (un profil sans date = CDD/extra,
+pas de suivi de cumul).
+
+### 41. ✅ Icônes lucide-react (suite), logo dans la navbar, coach multi-catégories — CORRIGÉ/AJOUTÉ
+- 3 emoji restants remplacés par des icônes `lucide-react` : « Télécharger une sauvegarde » (`Download`),
+  indicateur de note sur un créneau (`StickyNote`, Planning personnel + cartes de séance), « Récap
+  mensuel » (`BarChart3`).
+- **Logo dans la navbar.** Le texte « Fitnessmov' Planning » du header est remplacé par le logo
+  Fitnessmov Aqua (`Layout.jsx`), comme sur l'écran de sélection des profils.
+- **Annuaire : un coach peut apparaître dans plusieurs catégories** (ex. aussi employé). Nouveau champ
+  `coaches.categories_extra` (CSV), éditable via des cases à cocher « Aussi… » dans la fiche rapide coach
+  de l'Annuaire (`PATCH /api/coaches/:id`). Le coach apparaît alors dans la section Coachs **et** dans
+  chaque catégorie supplémentaire cochée, avec un petit badge « Coach » pour le repérer hors de sa section
+  d'origine.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

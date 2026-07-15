@@ -7,13 +7,15 @@ const db = require('../db/database');
 const CATEGORIES = ['prestataire', 'employe', 'responsable'];
 
 // GET /api/annuaire — fusionne les coachs (table coaches) et les autres contacts
-// (table annuaire_contacts) en une seule liste.
+// (table annuaire_contacts) en une seule liste. Un coach peut aussi apparaître dans
+// d'autres catégories (ex. un coach qui est aussi employé) via categories_extra.
 router.get('/', (req, res) => {
-  const coachs = db.all('SELECT id, prenom, nom, telephone, aqua, fitness, boxe, crosstraining, poledance FROM coaches WHERE actif = 1 AND supprime = 0 ORDER BY prenom, nom')
+  const coachs = db.all('SELECT id, prenom, nom, telephone, aqua, fitness, boxe, crosstraining, poledance, categories_extra FROM coaches WHERE actif = 1 AND supprime = 0 ORDER BY prenom, nom')
     .map(c => ({
       id: `coach-${c.id}`,
       coachId: c.id,
       categorie: 'coach',
+      categories: ['coach', ...(c.categories_extra ? c.categories_extra.split(',').filter(Boolean) : [])],
       nom: `${c.prenom} ${c.nom}`.trim(),
       telephone: c.telephone,
       aqua: c.aqua,
@@ -25,7 +27,7 @@ router.get('/', (req, res) => {
       readonly: true,
     }));
   const autres = db.all('SELECT * FROM annuaire_contacts ORDER BY categorie, nom')
-    .map(c => ({ ...c, readonly: false }));
+    .map(c => ({ ...c, categories: [c.categorie], readonly: false }));
   res.json([...coachs, ...autres]);
 });
 

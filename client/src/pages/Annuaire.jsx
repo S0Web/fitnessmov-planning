@@ -112,19 +112,29 @@ function ContactModal({ contact, onSave, onDelete, onClose }) {
 function CoachQuickEditModal({ coach, onSave, onClose }) {
   const [form, setForm] = useState({
     telephone: coach.telephone || '',
+    categoriesExtra: (coach.categories || []).filter(c => c !== 'coach'),
     ...Object.fromEntries(Object.keys(DISCIPLINE_CONFIG).map(k => [k, !!coach[k]])),
   });
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
   function set(k, v) { setForm(f => ({ ...f, [k]: v })); }
+  function toggleCategorieExtra(id) {
+    setForm(f => ({
+      ...f,
+      categoriesExtra: f.categoriesExtra.includes(id)
+        ? f.categoriesExtra.filter(c => c !== id)
+        : [...f.categoriesExtra, id],
+    }));
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError(null);
     setSaving(true);
     try {
-      await onSave(form);
+      const { categoriesExtra, ...rest } = form;
+      await onSave({ ...rest, categories_extra: categoriesExtra });
       onClose();
     } catch (err) {
       setError(err.message);
@@ -165,6 +175,20 @@ function CoachQuickEditModal({ coach, onSave, onClose }) {
                 </label>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Aussi…</label>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {EDITABLE_CATEGORIES.map(cat => (
+                <label key={cat.id} className="flex items-center gap-1.5 text-sm text-gray-700 cursor-pointer">
+                  <input type="checkbox" checked={form.categoriesExtra.includes(cat.id)}
+                    onChange={() => toggleCategorieExtra(cat.id)} className="rounded accent-sky-500" />
+                  {cat.label}
+                </label>
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1">Un coach peut aussi apparaître dans ces catégories (ex. s'il est également employé).</p>
           </div>
 
           <div className="flex gap-2 pt-1">
@@ -216,15 +240,16 @@ export default function Annuaire() {
   const filtered = useMemo(() => {
     const q = norm(search);
     return contacts.filter(c => {
-      if (categorieFiltre !== 'tous' && c.categorie !== categorieFiltre) return false;
+      if (categorieFiltre !== 'tous' && !c.categories.includes(categorieFiltre)) return false;
       if (!q) return true;
       return norm(c.nom).includes(q) || norm(c.telephone).includes(q) || norm(c.notes).includes(q);
     });
   }, [contacts, search, categorieFiltre]);
 
+  // Un contact (typiquement un coach aussi employé) peut apparaître dans plusieurs sections.
   const groupes = useMemo(() => {
     return DISPLAY_CATEGORIES
-      .map(c => ({ ...c, items: filtered.filter(x => x.categorie === c.id) }))
+      .map(c => ({ ...c, items: filtered.filter(x => x.categories.includes(c.id)) }))
       .filter(g => g.items.length > 0);
   }, [filtered]);
 
@@ -279,6 +304,9 @@ export default function Annuaire() {
                   const nameContent = (
                     <span className="flex items-center gap-2 min-w-0 flex-wrap">
                       <span className="font-medium text-gray-800 truncate">{c.nom}</span>
+                      {g.id !== 'coach' && c.categories.includes('coach') && (
+                        <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-gray-100 text-gray-500">Coach</span>
+                      )}
                       {c.categorie === 'coach' && (
                         <span className="flex gap-1 flex-wrap">
                           {Object.entries(DISCIPLINE_CONFIG).map(([key, cfg]) => (

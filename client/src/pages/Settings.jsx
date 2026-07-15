@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useConfig } from '../context/ConfigContext';
@@ -367,8 +367,8 @@ export default function Settings() {
           {/* Sauvegarde — discrète (usage exceptionnel) */}
           <div className="mt-6 text-right">
             <button onClick={handleBackup} disabled={backing}
-              className="text-xs text-gray-400 hover:text-gray-600 hover:underline disabled:opacity-50">
-              {backing ? 'Préparation…' : '⬇ Télécharger une sauvegarde de la base'}
+              className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 hover:underline disabled:opacity-50">
+              <Download className="h-3.5 w-3.5" /> {backing ? 'Préparation…' : 'Télécharger une sauvegarde de la base'}
             </button>
             {backupError && <div className="text-xs text-red-500 mt-1">Erreur : {backupError}</div>}
           </div>

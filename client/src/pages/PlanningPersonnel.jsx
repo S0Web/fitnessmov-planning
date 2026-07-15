@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, BarChart3, StickyNote } from 'lucide-react';
 import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -257,8 +257,8 @@ export default function PlanningPersonnel() {
             )}
             {isManager && (
               <button onClick={() => setVue(v => v === 'semaine' ? 'recap' : 'semaine')}
-                className="px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">
-                {vue === 'semaine' ? '📊 Récap mensuel' : '← Retour à la semaine'}
+                className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-600 hover:bg-gray-100 text-sm font-medium rounded">
+                {vue === 'semaine' ? <><BarChart3 className="h-4 w-4" /> Récap mensuel</> : '← Retour à la semaine'}
               </button>
             )}
           </div>
@@ -344,7 +344,9 @@ export default function PlanningPersonnel() {
                               style={{ backgroundColor: typeCfg ? typeCfg.bg : 'transparent' }}
                             >
                               {noteText && (
-                                <span title={noteText} aria-label="Note" className="absolute top-0.5 right-1 text-[10px] leading-none cursor-help">📝</span>
+                                <span title={noteText} aria-label="Note" className="absolute top-0.5 right-1 text-gray-500 cursor-help">
+                                  <StickyNote className="h-3 w-3" />
+                                </span>
                               )}
                               {cellCreneaux.length === 0 && (
                                 <Plus className="h-3.5 w-3.5 text-gray-300 opacity-0 group-hover/cell:opacity-100 transition-opacity" />

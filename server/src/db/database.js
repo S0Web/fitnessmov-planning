@@ -500,4 +500,7 @@ tryAlter('ALTER TABLE app_users ADD COLUMN date_debut_contrat TEXT');
 // ─── Cumul de congés payés : ajustement manuel (manager) par rapport au calcul automatique ───
 tryAlter('ALTER TABLE app_users ADD COLUMN cp_ajuste REAL NOT NULL DEFAULT 0');
 
+// ─── Annuaire : un coach peut aussi apparaître dans d'autres catégories (ex. employé) ───
+tryAlter("ALTER TABLE coaches ADD COLUMN categories_extra TEXT NOT NULL DEFAULT ''");
+
 module.exports = db;

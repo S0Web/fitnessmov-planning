@@ -4,6 +4,7 @@ import { Settings as GearIcon, Menu as MenuIcon, X as XIcon } from 'lucide-react
 import { useAuth } from '../context/AuthContext';
 import { useConfig } from '../context/ConfigContext';
 import { colorForUser } from '../lib/utils';
+import logo from '../assets/logo.png';
 
 const links = [
   { to: '/',                   label: 'Planning des cours' },
@@ -33,8 +34,8 @@ export default function Layout({ children }) {
       {/* Header */}
       <header className="sticky top-0 z-30 bg-sky-700 text-white shadow-md">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4 md:gap-8">
-          <span className="font-bold text-base md:text-lg tracking-tight whitespace-nowrap flex items-baseline gap-2">
-            Fitnessmov&apos; Planning
+          <span className="flex items-center gap-2 flex-shrink-0">
+            <img src={logo} alt="Fitnessmov Aqua" className="h-9 w-auto" />
             {salleNom && (
               <span className="text-[11px] font-semibold bg-white/20 text-white rounded-full px-2 py-0.5 whitespace-nowrap">
                 {salleNom}
