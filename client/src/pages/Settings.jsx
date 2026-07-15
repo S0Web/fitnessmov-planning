@@ -6,7 +6,53 @@ import { useConfig } from '../context/ConfigContext';
 import { useToast } from '../context/ToastContext';
 import { parseServerDate, colorForUser } from '../lib/utils';
 
-function UserModal({ user, onSave, onClose }) {
+function CpAdjustBlock({ userId }) {
+  const [detail, setDetail] = useState(null);
+  const [busy, setBusy] = useState(false);
+
+  const load = () => api.getCpDetail(userId).then(setDetail).catch(() => {});
+  useEffect(() => { load(); }, [userId]);
+
+  async function adjust(delta) {
+    setBusy(true);
+    try {
+      const updated = await api.adjustCp(userId, delta);
+      setDetail(updated);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!detail) return null;
+
+  const Row = ({ label, value }) => (
+    <div className="flex justify-between text-xs text-gray-500 py-0.5">
+      <span>{label}</span>
+      <span className="font-medium text-gray-700 tabular-nums">{value}</span>
+    </div>
+  );
+
+  return (
+    <div className="border border-gray-200 rounded-lg px-3 py-2.5 bg-gray-50">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Congés</span>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={() => adjust(-1)} disabled={busy}
+            className="h-6 w-6 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-50">−</button>
+          <span className="w-8 text-center font-bold text-gray-800 tabular-nums">{detail.acquis}</span>
+          <button type="button" onClick={() => adjust(1)} disabled={busy}
+            className="h-6 w-6 flex items-center justify-center rounded border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-50">+</button>
+        </div>
+      </div>
+      <Row label="Congés calculé à date" value={detail.calculeADate} />
+      <Row label="Congés ajouté par rapport à la date" value={detail.ajuste} />
+      <Row label="Congés pris" value={detail.pris} />
+      <Row label="Congés restant" value={detail.restant} />
+    </div>
+  );
+}
+
+function UserModal({ user, onSave, onClose, viewerIsManager }) {
   const isNew = !user?.id;
   const [form, setForm] = useState({
     prenom:   user?.prenom   || '',
@@ -80,6 +126,7 @@ function UserModal({ user, onSave, onClose }) {
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
             <p className="text-[11px] text-gray-400 mt-1">Sert à calculer le cumul de CP (2,5 jours acquis par mois).</p>
           </div>
+          {!isNew && viewerIsManager && <CpAdjustBlock userId={user.id} />}
           <div className="flex gap-2 pt-1">
             <button type="button" onClick={onClose}
               className="flex-1 border border-gray-300 text-gray-600 rounded py-2 text-sm hover:bg-gray-50">Annuler</button>
@@ -410,6 +457,7 @@ export default function Settings() {
           user={modal?.id ? modal : null}
           onSave={handleSave}
           onClose={() => setModal(null)}
+          viewerIsManager={isManager && tab === 'users'}
         />
       )}
     </div>

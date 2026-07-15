@@ -497,4 +497,7 @@ tryAlter('ALTER TABLE app_users ADD COLUMN code_hash TEXT');
 // ─── Cumul de congés payés : date à partir de laquelle 2,5 jours/mois s'acquièrent ───
 tryAlter('ALTER TABLE app_users ADD COLUMN date_debut_contrat TEXT');
 
+// ─── Cumul de congés payés : ajustement manuel (manager) par rapport au calcul automatique ───
+tryAlter('ALTER TABLE app_users ADD COLUMN cp_ajuste REAL NOT NULL DEFAULT 0');
+
 module.exports = db;

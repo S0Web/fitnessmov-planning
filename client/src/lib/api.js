@@ -42,6 +42,8 @@ export const api = {
   createAppUser:  (data) => req('/app-users', { method: 'POST', body: JSON.stringify(data) }),
   updateAppUser:  (id, data) => req(`/app-users/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   deleteAppUser:  (id) => req(`/app-users/${id}`, { method: 'DELETE' }),
+  getCpDetail:    (id) => req(`/app-users/${id}/cp`),
+  adjustCp:       (id, delta) => req(`/app-users/${id}/cp-ajuste`, { method: 'PATCH', body: JSON.stringify({ delta }) }),
   getAuditLog:    (params = {}) => {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
     return req(`/app-users/audit${qs ? `?${qs}` : ''}`);

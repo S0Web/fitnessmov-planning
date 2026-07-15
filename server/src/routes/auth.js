@@ -19,14 +19,19 @@ router.get('/profiles', (req, res) => {
   res.json(profiles);
 });
 
-// POST /api/auth/profiles — créer un nouveau profil (public, pas de mot de passe)
-// Un profil = aussi un employé planifiable dans "Planning personnel".
+// POST /api/auth/profiles — création du tout premier profil (manager) d'une salle neuve,
+// sans authentification puisqu'il n'existe encore personne pour s'authentifier. Dès qu'un
+// profil existe, cette route se ferme : toute création passe ensuite par Paramètres >
+// Utilisateurs (manager uniquement, POST /api/app-users).
 router.post('/profiles', (req, res) => {
   const { prenom, nom, email } = req.body;
   if (!prenom || !prenom.trim()) return res.status(400).json({ error: 'Prénom requis' });
 
   const count = db.get('SELECT COUNT(*) as n FROM app_users').n;
-  const role = count === 0 ? 'manager' : 'user';
+  if (count > 0) {
+    return res.status(403).json({ error: 'La création de profil se fait depuis Paramètres > Utilisateurs (manager).' });
+  }
+  const role = 'manager';
 
   try {
     const result = db.run(

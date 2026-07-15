@@ -339,11 +339,28 @@ molette) — clique pour sauter directement sur l'autre salle.
 ### 38. ✅ Cumul de congés payés — AJOUTÉ
 Nouveau champ `app_users.date_debut_contrat` (modifiable par un manager, champ date dans Paramètres >
 Utilisateurs). À partir de cette date, 2,5 jours de CP sont acquis par mois plein écoulé
-(`moisEcoules`/`soldeCp` dans `server/src/routes/personnelCreneaux.js`). Le widget CP du planning
-personnel affiche désormais, pour chaque employé (vue manager) ou pour soi-même : le nombre de CP pris
-sur l'année sélectionnée (comme avant) et, si une date de début de contrat est renseignée, le solde
-restant (acquis − pris cumulé depuis toujours, en vert si positif, en rouge si négatif). Sans date de
-début renseignée, seul le nombre pris s'affiche (comme avant).
+(`moisEcoules`/`soldeCp`, désormais dans `server/src/lib/cp.js`, partagé entre les routes). Revu et
+complété au lot #39 ci-dessous (ajustement manuel + refonte du widget).
+
+### 39. ✅ Ajustement manuel des CP, refonte du widget, filtre de cours par semaine, fin de la création de profil à la volée — CORRIGÉ/AJOUTÉ
+- **Ajustement manuel du cumul de CP.** Le calcul automatique seul ne suffit pas (reprise d'ancienneté,
+  régularisations…). Nouveau champ `app_users.cp_ajuste` (manager) : dans la fiche d'un utilisateur
+  (Paramètres > Utilisateurs > Modifier, manager uniquement), un bloc « Congés » affiche le total
+  (`calculé à date + ajusté`) avec des boutons −/+ qui modifient l'ajustement d'une unité (nouvelles
+  routes `GET/PATCH /api/app-users/:id/cp`), ainsi que le détail : calculé à date, ajouté, pris, restant.
+  Invisible ailleurs (pas sur « Mon profil », pas pour un non-manager).
+- **Widget CP du planning personnel refondu en tableau** (Nom / CP pris ce mois / CP pris cette année /
+  CP restants) au lieu de la liste avec sélecteur d'année — toujours basé sur le mois/l'année réels.
+  Aside élargi (`w-48` → `w-64`) pour laisser respirer le tableau.
+- **Filtre "Filtrer par…" du planning des cours** ne propose plus que les cours ayant réellement lieu la
+  semaine affichée (au lieu de tout le catalogue, illisible) ; se met à jour à chaque changement de
+  semaine, et un filtre actif sur un cours absent de la nouvelle semaine est automatiquement retiré
+  (sinon la liste semblait vide sans explication).
+- **Fin de la création de profil à la volée.** `POST /api/auth/profiles` (public) ne fonctionne plus que
+  pour amorcer le tout premier compte d'une salle neuve (0 profil) ; au-delà, la route répond 403. Bulle
+  « Ajouter » retirée de l'écran d'accueil (remplacée par un formulaire de démarrage uniquement quand la
+  salle n'a encore aucun profil) et bouton « + employé » retiré du planning personnel — toute création
+  passe désormais par Paramètres > Utilisateurs (manager).
 
 ---
 

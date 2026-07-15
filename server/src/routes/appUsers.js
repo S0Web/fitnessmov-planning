@@ -2,11 +2,36 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../db/database');
 const { requireAuth, requireManager } = require('../middleware/auth');
+const { soldeCp } = require('../lib/cp');
 
 // GET /api/app-users — liste (manager seulement) — hors profils supprimés
 router.get('/', requireManager, (req, res) => {
   const users = db.all('SELECT id, prenom, nom, email, role, actif, date_debut_contrat, created_at FROM app_users WHERE supprime = 0 ORDER BY prenom, nom');
   res.json(users);
+});
+
+function cpDetail(id) {
+  const user = db.get('SELECT id, date_debut_contrat, cp_ajuste FROM app_users WHERE id = ?', [id]);
+  if (!user) return null;
+  const pris = db.get(`SELECT COUNT(*) as n FROM personnel_creneaux WHERE employe_id = ? AND type = 'cp'`, [id]).n;
+  return { date_debut_contrat: user.date_debut_contrat, ...soldeCp(user.date_debut_contrat, user.cp_ajuste, pris) };
+}
+
+// GET /api/app-users/:id/cp — détail du cumul de CP (manager)
+router.get('/:id/cp', requireManager, (req, res) => {
+  const detail = cpDetail(req.params.id);
+  if (!detail) return res.status(404).json({ error: 'Utilisateur introuvable' });
+  res.json(detail);
+});
+
+// PATCH /api/app-users/:id/cp-ajuste — ajustement manuel du cumul de CP (+1/-1, manager)
+router.patch('/:id/cp-ajuste', requireManager, (req, res) => {
+  const user = db.get('SELECT id, cp_ajuste FROM app_users WHERE id = ?', [req.params.id]);
+  if (!user) return res.status(404).json({ error: 'Utilisateur introuvable' });
+  const delta = Number(req.body.delta) || 0;
+  const newVal = Math.round(((user.cp_ajuste || 0) + delta) * 100) / 100;
+  db.run('UPDATE app_users SET cp_ajuste = ? WHERE id = ?', [newVal, user.id]);
+  res.json(cpDetail(req.params.id));
 });
 
 // POST /api/app-users — créer un profil (manager)

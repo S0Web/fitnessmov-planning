@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useConfig } from '../context/ConfigContext';
 import { api } from '../lib/api';
@@ -7,7 +6,10 @@ import { colorForUser } from '../lib/utils';
 import SalleSwitcher from '../components/SalleSwitcher';
 import logo from '../assets/logo.png';
 
-function AddProfileModal({ onCreated, onClose }) {
+// Formulaire de démarrage : uniquement affiché quand la salle n'a encore aucun profil
+// (bootstrap du tout premier compte, forcément manager). Une fois un profil créé, cette
+// route se ferme côté serveur — toute création ultérieure passe par Paramètres > Utilisateurs.
+function FirstProfileForm({ onCreated }) {
   const [form, setForm] = useState({ prenom: '', nom: '' });
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -26,32 +28,25 @@ function AddProfileModal({ onCreated, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8" onClick={e => e.stopPropagation()}>
-        <h2 className="text-sm font-bold text-gray-700 mb-3">Nouveau profil</h2>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">{error}</div>}
-          <div className="grid grid-cols-2 gap-2">
-            <input placeholder="Prénom *" required autoFocus value={form.prenom}
-              onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))}
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
-            <input placeholder="Nom" value={form.nom}
-              onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
-          </div>
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 border border-gray-300 text-gray-600 rounded-lg py-2 text-sm hover:bg-gray-50">
-              Annuler
-            </button>
-            <button type="submit" disabled={saving}
-              className="flex-1 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
-              style={{ backgroundColor: '#2fa8cc' }}>
-              {saving ? 'Création…' : 'Créer'}
-            </button>
-          </div>
-        </form>
-      </div>
+    <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-8">
+      <h2 className="text-sm font-bold text-gray-700 mb-1">Premier compte</h2>
+      <p className="text-xs text-gray-400 mb-3">Aucun profil pour l'instant — crée le premier compte (manager).</p>
+      <form onSubmit={handleSubmit} className="space-y-3">
+        {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">{error}</div>}
+        <div className="grid grid-cols-2 gap-2">
+          <input placeholder="Prénom *" required autoFocus value={form.prenom}
+            onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))}
+            className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+          <input placeholder="Nom" value={form.nom}
+            onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
+            className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
+        </div>
+        <button type="submit" disabled={saving}
+          className="w-full text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50"
+          style={{ backgroundColor: '#2fa8cc' }}>
+          {saving ? 'Création…' : 'Créer'}
+        </button>
+      </form>
     </div>
   );
 }
@@ -181,12 +176,12 @@ export default function ProfilePicker() {
   const [profiles, setProfiles] = useState([]);
   const [error, setError]       = useState(null);
   const [selecting, setSelecting] = useState(null);
-  const [showAdd, setShowAdd]   = useState(false);
+  const [loaded, setLoaded]     = useState(false);
   const [codeModal, setCodeModal] = useState(null);   // profil en attente de saisie du code
   const [createCodeModal, setCreateCodeModal] = useState(null); // { profile, forced }
 
   function loadProfiles() {
-    api.getProfiles().then(setProfiles).catch(() => {});
+    api.getProfiles().then(setProfiles).catch(() => {}).finally(() => setLoaded(true));
   }
 
   useEffect(() => { loadProfiles(); }, []);
@@ -253,41 +248,27 @@ export default function ProfilePicker() {
         <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm mb-6">{error}</div>
       )}
 
-      <div className="flex flex-wrap justify-center gap-6 max-w-2xl">
-        {profiles.map(p => (
-          <button
-            key={p.id}
-            onClick={() => handleClickProfile(p)}
-            disabled={selecting !== null}
-            className="flex flex-col items-center gap-2 group disabled:opacity-50"
-          >
-            <span
-              className="h-20 w-20 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-md transition-transform group-hover:scale-105 group-active:scale-95"
-              style={{ backgroundColor: colorForUser(p.id) }}
+      {loaded && profiles.length === 0 ? (
+        <FirstProfileForm onCreated={finalizeSelect} />
+      ) : (
+        <div className="flex flex-wrap justify-center gap-6 max-w-2xl">
+          {profiles.map(p => (
+            <button
+              key={p.id}
+              onClick={() => handleClickProfile(p)}
+              disabled={selecting !== null}
+              className="flex flex-col items-center gap-2 group disabled:opacity-50"
             >
-              {selecting === p.id ? '…' : `${p.prenom[0] || ''}${p.nom[0] || ''}`}
-            </span>
-            <span className="text-sm font-medium text-gray-700">{p.prenom}</span>
-          </button>
-        ))}
-
-        <button
-          onClick={() => setShowAdd(true)}
-          disabled={selecting !== null}
-          className="flex flex-col items-center gap-2 group disabled:opacity-50"
-        >
-          <span className="h-20 w-20 rounded-full flex items-center justify-center border-2 border-dashed border-gray-300 text-gray-300 transition-colors group-hover:border-sky-400 group-hover:text-sky-500">
-            <Plus className="h-8 w-8" />
-          </span>
-          <span className="text-sm font-medium text-gray-400 group-hover:text-sky-600">Ajouter</span>
-        </button>
-      </div>
-
-      {showAdd && (
-        <AddProfileModal
-          onCreated={async (userId) => { setShowAdd(false); await finalizeSelect(userId); }}
-          onClose={() => setShowAdd(false)}
-        />
+              <span
+                className="h-20 w-20 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-md transition-transform group-hover:scale-105 group-active:scale-95"
+                style={{ backgroundColor: colorForUser(p.id) }}
+              >
+                {selecting === p.id ? '…' : `${p.prenom[0] || ''}${p.nom[0] || ''}`}
+              </span>
+              <span className="text-sm font-medium text-gray-700">{p.prenom}</span>
+            </button>
+          ))}
+        </div>
       )}
 
       {codeModal && (

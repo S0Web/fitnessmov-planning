@@ -37,42 +37,41 @@ function fmtHeures(totalMinutes) {
   return (Number.isInteger(h) ? String(h) : h.toFixed(1).replace('.', ',')) + 'h';
 }
 
-function CpSummary({ isManager }) {
+function CpSummary() {
   const [cp, setCp] = useState([]);
-  const [annee, setAnnee] = useState(() => new Date().getFullYear());
 
-  useEffect(() => { api.getCpSummary(annee).then(setCp).catch(() => {}); }, [annee]);
+  useEffect(() => { api.getCpSummary().then(setCp).catch(() => {}); }, []);
 
   return (
-    <div className="mt-3 bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-xs">
-      <div className="flex items-center justify-between mb-2">
+    <div className="mt-3 bg-white border border-gray-200 rounded-lg overflow-hidden text-xs">
+      <div className="px-3 py-2 border-b border-gray-100">
         <span className="font-semibold text-gray-500 text-[11px] uppercase tracking-wide">Congés payés</span>
-        <div className="flex items-center gap-1">
-          <button onClick={() => setAnnee(a => a - 1)} className="text-gray-400 hover:text-gray-600 px-1">‹</button>
-          <span className="text-gray-600 font-medium tabular-nums">{annee}</span>
-          <button onClick={() => setAnnee(a => a + 1)} disabled={annee >= new Date().getFullYear()}
-            className="text-gray-400 hover:text-gray-600 px-1 disabled:opacity-30">›</button>
-        </div>
       </div>
       {cp.length === 0 ? (
-        <p className="text-gray-400 italic">Aucun CP sur {annee}.</p>
+        <p className="text-gray-400 italic px-3 py-2">Aucun profil.</p>
       ) : (
-        <div className="space-y-1.5">
-          {cp.map(c => (
-            <div key={c.id} className="flex justify-between items-baseline text-gray-600">
-              <span>{isManager ? c.prenom : 'Mes CP'}</span>
-              <span className="text-right">
-                <span className="font-semibold text-gray-700 tabular-nums">{c.cp}</span>
-                <span className="text-gray-400"> pris</span>
-                {c.restant !== null && (
-                  <span className={`ml-2 font-semibold tabular-nums ${c.restant < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                    · {c.restant} restant{Math.abs(c.restant) >= 2 ? 's' : ''}
-                  </span>
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="text-gray-400 text-[10px] uppercase tracking-wide">
+              <th className="text-left font-medium px-3 py-1">Nom</th>
+              <th className="text-right font-medium px-1.5 py-1" title="CP pris ce mois">Mois</th>
+              <th className="text-right font-medium px-1.5 py-1" title="CP pris cette année">Année</th>
+              <th className="text-right font-medium px-3 py-1" title="CP restants">Restant</th>
+            </tr>
+          </thead>
+          <tbody>
+            {cp.map(c => (
+              <tr key={c.id} className="border-t border-gray-50">
+                <td className="px-3 py-1 text-gray-600 truncate max-w-[90px]">{c.prenom}</td>
+                <td className="px-1.5 py-1 text-right text-gray-600 tabular-nums">{c.prisMois}</td>
+                <td className="px-1.5 py-1 text-right text-gray-600 tabular-nums">{c.prisAnnee}</td>
+                <td className={`px-3 py-1 text-right font-semibold tabular-nums ${c.restant < 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                  {c.restant}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );
@@ -162,7 +161,6 @@ export default function PlanningPersonnel() {
   const [dupliquer, setDupliquer] = useState(false);
   const [dupliquerMsg, setDupliquerMsg] = useState(null);
   const [vue, setVue] = useState('semaine'); // 'semaine' | 'recap'
-  const [showAddEmploye, setShowAddEmploye] = useState(false);
 
   const semaine = getSemaine(lundi);
 
@@ -230,9 +228,9 @@ export default function PlanningPersonnel() {
 
   return (
     <div className="flex gap-4">
-      <aside className="hidden lg:block w-48 flex-shrink-0">
+      <aside className="hidden lg:block w-64 flex-shrink-0">
         <MiniCalendar lundi={lundi} onSelectDate={(d) => setLundi(getLundi(d))} />
-        <CpSummary isManager={isManager} />
+        <CpSummary />
       </aside>
 
       <div className="flex-1 min-w-0">
@@ -274,7 +272,7 @@ export default function PlanningPersonnel() {
         ) : loading ? (
           <div className="text-center py-10 text-gray-400 text-sm">Chargement…</div>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-gray-400 py-10 text-center">Aucun profil — ajoute-en un depuis l'écran d'accueil.</p>
+          <p className="text-sm text-gray-400 py-10 text-center">Aucun profil — ajoute-en un depuis Paramètres &gt; Utilisateurs.</p>
         ) : (
           <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-x-auto md:overflow-visible">
             <table className="w-full border-collapse table-fixed text-sm min-w-[800px]">
@@ -371,16 +369,6 @@ export default function PlanningPersonnel() {
                     </tr>
                   );
                 })}
-                {/* Ajouter un employé — discret (l'ajout principal reste dans Paramètres > Utilisateurs) */}
-                <tr>
-                  <td colSpan={9} className="sticky left-0 bg-white">
-                    <button onClick={() => setShowAddEmploye(true)}
-                      className="flex items-center gap-1.5 pl-3 py-1.5 text-xs text-gray-400 hover:text-sky-600 transition-colors">
-                      <Plus className="h-3.5 w-3.5" /> employé
-                    </button>
-                  </td>
-                  <td className="bg-white" />
-                </tr>
               </tbody>
             </table>
           </div>
@@ -396,61 +384,6 @@ export default function PlanningPersonnel() {
           onClose={() => setCellModal(null)}
         />
       )}
-
-      {showAddEmploye && (
-        <AddEmployeModal
-          onClose={() => setShowAddEmploye(false)}
-          onCreated={() => { setShowAddEmploye(false); loadProfils(); }}
-        />
-      )}
-    </div>
-  );
-}
-
-function AddEmployeModal({ onClose, onCreated }) {
-  const toast = useToast();
-  const [form, setForm] = useState({ prenom: '', nom: '' });
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
-
-  async function submit(e) {
-    e.preventDefault();
-    if (!form.prenom.trim()) return;
-    setSaving(true); setError(null);
-    try {
-      await api.createProfile({ prenom: form.prenom.trim(), nom: form.nom.trim() });
-      toast.success('Employé ajouté');
-      onCreated();
-    } catch (err) {
-      setError(err.message);
-      setSaving(false);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-        <h2 className="text-sm font-bold text-gray-700 mb-3">Nouvel employé</h2>
-        <form onSubmit={submit} className="space-y-3">
-          {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded px-3 py-2 text-sm">{error}</div>}
-          <div className="grid grid-cols-2 gap-2">
-            <input placeholder="Prénom *" required autoFocus value={form.prenom}
-              onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))}
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
-            <input placeholder="Nom" value={form.nom}
-              onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
-              className="border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400" />
-          </div>
-          <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose}
-              className="flex-1 border border-gray-300 text-gray-600 rounded-lg py-2 text-sm hover:bg-gray-50">Annuler</button>
-            <button type="submit" disabled={saving}
-              className="flex-1 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50" style={{ backgroundColor: '#2fa8cc' }}>
-              {saving ? 'Création…' : 'Créer'}
-            </button>
-          </div>
-        </form>
-      </div>
     </div>
   );
 }

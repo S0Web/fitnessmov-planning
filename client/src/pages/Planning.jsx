@@ -263,6 +263,18 @@ export default function Planning() {
 
   useEffect(() => { loadSeances(); }, [loadSeances]);
 
+  // Retire du filtre les cours qui n'ont plus lieu cette semaine (sinon un filtre actif
+  // sur un cours absent de la nouvelle semaine masquerait silencieusement toute la liste).
+  useEffect(() => {
+    if (filtreCours.size === 0) return;
+    const idsPresents = new Set(seances.map(s => s.cours_type_id));
+    setFiltreCours(prev => {
+      const next = new Set([...prev].filter(id => idsPresents.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seances]);
+
   async function handlePatch(id, data) {
     try {
       await api.patchSeance(id, data);
@@ -323,8 +335,15 @@ export default function Planning() {
     });
   }
 
+  // Cours réellement présents sur la semaine affichée (évite un filtre surchargé avec
+  // tout le catalogue alors qu'une poignée de cours seulement ont lieu cette semaine-là).
+  const coursTypesSemaine = useMemo(() => {
+    const idsPresents = new Set(seances.map(s => s.cours_type_id));
+    return coursTypes.filter(ct => idsPresents.has(ct.id));
+  }, [coursTypes, seances]);
+
   function toggleFiltreCategorie(categorie) {
-    const ids = coursTypes.filter(ct => ct.categorie === categorie).map(ct => ct.id);
+    const ids = coursTypesSemaine.filter(ct => ct.categorie === categorie).map(ct => ct.id);
     setFiltreCours(prev => {
       const tousCoches = ids.length > 0 && ids.every(id => prev.has(id));
       const next = new Set(prev);
@@ -334,11 +353,11 @@ export default function Planning() {
   }
 
   const coursTypesParCategorie = useMemo(() => {
-    return coursTypes.reduce((acc, ct) => {
+    return coursTypesSemaine.reduce((acc, ct) => {
       (acc[ct.categorie] ||= []).push(ct);
       return acc;
     }, {});
-  }, [coursTypes]);
+  }, [coursTypesSemaine]);
 
   const filteredSeances = useMemo(
     () => (filtreCours.size === 0 ? seances : seances.filter(s => filtreCours.has(s.cours_type_id))),
@@ -397,7 +416,7 @@ export default function Planning() {
                 </div>
               );
             })}
-            {coursTypes.length === 0 && <p className="text-gray-400 italic py-1">Aucun cours</p>}
+            {coursTypesSemaine.length === 0 && <p className="text-gray-400 italic py-1">Aucun cours cette semaine</p>}
           </div>
         </div>
 
