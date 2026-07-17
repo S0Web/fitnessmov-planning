@@ -99,20 +99,17 @@ function PersonnelTimeline({ semaine, creneaux, today, onOpenCell }) {
                         key={seg.id}
                         onClick={() => onOpenCell(emp, iso)}
                         title={`${emp.prenom} ${emp.nom} : ${fmtTime(seg.debut)} - ${fmtTime(seg.fin)}`}
-                        className="absolute inset-y-0 rounded hover:opacity-90 transition-opacity"
+                        className="absolute inset-y-0 rounded hover:opacity-90 transition-opacity flex items-center pl-1.5"
                         style={{ left: `${left}%`, width: `${width}%`, backgroundColor: colorForUser(emp.id) }}
                       >
                         <span className="absolute right-full top-1/2 -translate-y-1/2 pr-1 text-[10px] font-medium text-gray-500 whitespace-nowrap tabular-nums">
                           {fmtTime(seg.debut)}
                         </span>
-                        <span className="absolute left-full top-1/2 -translate-y-1/2 pl-1 flex items-center gap-1 whitespace-nowrap">
-                          <span className="text-[10px] font-medium text-gray-500 tabular-nums">{fmtTime(seg.fin)}</span>
-                          <span
-                            className="h-4 w-4 flex-shrink-0 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
-                            style={{ backgroundColor: colorForUser(emp.id) }}
-                          >
-                            {emp.prenom?.[0]}{emp.nom?.[0]}
-                          </span>
+                        <span className="text-white text-[10px] font-bold whitespace-nowrap">
+                          {emp.prenom?.[0]}{emp.nom?.[0]}
+                        </span>
+                        <span className="absolute left-full top-1/2 -translate-y-1/2 pl-1 text-[10px] font-medium text-gray-500 whitespace-nowrap tabular-nums">
+                          {fmtTime(seg.fin)}
                         </span>
                       </button>
                     );

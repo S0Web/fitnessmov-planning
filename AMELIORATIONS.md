@@ -392,10 +392,10 @@ jours sans personne affichent juste le nom du jour sans occuper d'espace inutile
 la même fiche d'édition que le tableau au-dessus (comportement identique, juste une autre porte d'entrée).
 
 ### 43. ✅ Vue Gantt : lisibilité, séparation des jours, plus de scroll horizontal — CORRIGÉ
-- Les initiales (dans un badge coloré) sont déplacées à droite de la barre au lieu du centre ; l'heure de
-  début s'affiche à gauche de la barre et l'heure de fin à droite (avant : rien n'indiquait clairement
-  quand une barre commençait/finissait). `border-radius` réduit (barres rectangulaires plutôt que pilules)
-  pour mieux voir les bords de début/fin.
+- Les initiales restent dans le rectangle coloré mais calées à gauche (au lieu de centrées) ; l'heure de
+  début s'affiche à gauche de la barre et l'heure de fin à droite, à l'extérieur (avant : rien n'indiquait
+  clairement quand une barre commençait/finissait). `border-radius` réduit (barres rectangulaires plutôt
+  que pilules) pour mieux voir les bords de début/fin.
 - Séparation des jours renforcée : bordures plus épaisses et plus foncées entre chaque jour, fond en
   alternance (zebra), le jour courant garde son fond bleu distinct.
 - **Fix scroll horizontal.** La page débordait horizontalement à cause du tableau hebdomadaire
