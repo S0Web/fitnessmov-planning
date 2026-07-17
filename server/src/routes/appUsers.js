@@ -2,6 +2,7 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../db/database');
 const { requireAuth, requireManager } = require('../middleware/auth');
+const { isPrivileged } = require('../middleware/ipAccess');
 const { soldeCp, prisDepuisContrat } = require('../lib/cp');
 
 // GET /api/app-users — liste (manager seulement) — hors profils supprimés
@@ -58,6 +59,9 @@ router.put('/:id', requireAuth, (req, res) => {
   const isManager = req.user.role === 'manager';
   const isSelf    = req.user.id === Number(req.params.id);
   if (!isManager && !isSelf) return res.status(403).json({ error: 'Accès refusé' });
+  if (!isManager && !isPrivileged(req)) {
+    return res.status(403).json({ error: "Modification non autorisée depuis cet accès. Connecte-toi depuis la salle (IP autorisée) ou avec un compte manager." });
+  }
 
   const { prenom, nom, email, role, actif, date_debut_contrat } = req.body;
   const user = db.get('SELECT * FROM app_users WHERE id = ?', [req.params.id]);

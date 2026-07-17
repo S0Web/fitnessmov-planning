@@ -503,4 +503,14 @@ tryAlter('ALTER TABLE app_users ADD COLUMN cp_ajuste REAL NOT NULL DEFAULT 0');
 // ─── Annuaire : un coach peut aussi apparaître dans d'autres catégories (ex. employé) ───
 tryAlter("ALTER TABLE coaches ADD COLUMN categories_extra TEXT NOT NULL DEFAULT ''");
 
+// ─── Accès en écriture restreint : IP autorisées à modifier depuis un compte non-manager ───
+db.run(`
+  CREATE TABLE IF NOT EXISTS ip_autorisees (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip          TEXT NOT NULL UNIQUE,
+    label       TEXT,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
 module.exports = db;

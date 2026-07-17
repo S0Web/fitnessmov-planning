@@ -21,6 +21,7 @@ const { recoverManager } = require('./db/recoverManager');
 recoverManager('Ballancourt-sur-Essonne', 'Sofiann'); // filet de sécurité si le seul manager a été supprimé définitivement
 
 const { requireAuth }   = require('./middleware/auth');
+const { requireWriteAccess, requireAnnuaireAccess } = require('./middleware/ipAccess');
 const { router: authRouter } = require('./routes/auth');
 const configRouter    = require('./routes/config');
 const healthRouter    = require('./routes/health');
@@ -34,9 +35,15 @@ const tasksRouter     = require('./routes/tasks');
 const personnelCreneauxRouter = require('./routes/personnelCreneaux');
 const annuaireRouter  = require('./routes/annuaire');
 const adminRouter     = require('./routes/admin');
+const ipAutoriseesRouter = require('./routes/ipAutorisees');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
+
+// Railway (et tout hébergeur derrière un reverse proxy) transmet l'IP réelle du
+// client via X-Forwarded-For : sans "trust proxy", req.ip renverrait toujours l'IP
+// interne du proxy, rendant la liste blanche d'IP inopérante.
+app.set('trust proxy', true);
 
 const allowedOrigins = [
   'http://localhost:5173',
@@ -58,17 +65,20 @@ app.use('/api/health', healthRouter);
 app.use('/api/config', configRouter);
 app.use('/api/auth',   authRouter);
 
-// Routes protégées
-app.use('/api/coaches',     requireAuth, coachesRouter);
-app.use('/api/cours-types', requireAuth, coursRouter);
-app.use('/api/seances',     requireAuth, seancesRouter);
-app.use('/api/pointeurs',   requireAuth, pointeursRouter);
+// Routes protégées — requireWriteAccess ne bloque que les écritures (POST/PUT/PATCH/
+// DELETE) des comptes non-managers hors IP autorisée ; les lectures (GET) passent.
+app.use('/api/coaches',     requireAuth, requireWriteAccess, coachesRouter);
+app.use('/api/cours-types', requireAuth, requireWriteAccess, coursRouter);
+app.use('/api/seances',     requireAuth, requireWriteAccess, seancesRouter);
+app.use('/api/pointeurs',   requireAuth, requireWriteAccess, pointeursRouter);
 app.use('/api/dashboard',   requireAuth, dashboardRouter);
 app.use('/api/app-users',   appUsersRouter);
-app.use('/api/tasks',       requireAuth, tasksRouter);
-app.use('/api/personnel-creneaux',  requireAuth, personnelCreneauxRouter);
-app.use('/api/annuaire',   requireAuth, annuaireRouter);
+app.use('/api/tasks',       requireAuth, requireWriteAccess, tasksRouter);
+app.use('/api/personnel-creneaux',  requireAuth, requireWriteAccess, personnelCreneauxRouter);
+// Annuaire : contient des coordonnées personnelles, ni lecture ni écriture hors accès privilégié.
+app.use('/api/annuaire',   requireAuth, requireAnnuaireAccess, annuaireRouter);
 app.use('/api/admin', adminRouter);
+app.use('/api/ip-autorisees', ipAutoriseesRouter);
 
 // Servir le front
 const clientDist = path.join(__dirname, '../public');

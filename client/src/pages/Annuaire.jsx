@@ -210,13 +210,15 @@ export default function Annuaire() {
   const toast = useToast();
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [search, setSearch] = useState('');
   const [categorieFiltre, setCategorieFiltre] = useState('tous');
   const [modal, setModal] = useState(null);
 
   function load() {
     setLoading(true);
-    api.getAnnuaire().then(setContacts).catch(() => {}).finally(() => setLoading(false));
+    setError(null);
+    api.getAnnuaire().then(setContacts).catch(e => setError(e.message)).finally(() => setLoading(false));
   }
   useEffect(() => { load(); }, []);
 
@@ -252,6 +254,15 @@ export default function Annuaire() {
       .map(c => ({ ...c, items: filtered.filter(x => x.categories.includes(c.id)) }))
       .filter(g => g.items.length > 0);
   }, [filtered]);
+
+  if (error) {
+    return (
+      <div className="max-w-md mx-auto mt-10 text-center">
+        <h1 className="text-lg font-bold text-gray-800 mb-2">Annuaire</h1>
+        <p className="text-sm text-gray-500">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 max-w-2xl mx-auto">

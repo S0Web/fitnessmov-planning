@@ -6,7 +6,7 @@ import { useConfig } from '../context/ConfigContext';
 import { colorForUser } from '../lib/utils';
 import logo from '../assets/logo.png';
 
-const links = [
+const ALL_LINKS = [
   { to: '/',                   label: 'Planning des cours' },
   { to: '/planning-personnel', label: 'Planning personnel' },
   { to: '/coaches',             label: 'Coaches' },
@@ -28,6 +28,8 @@ export default function Layout({ children }) {
   const { user, switchProfile } = useAuth();
   const { salleNom } = useConfig();
   const [menuOpen, setMenuOpen] = useState(false);
+  const restricted = user?.privileged === false;
+  const links = restricted ? ALL_LINKS.filter(l => l.to !== '/annuaire') : ALL_LINKS;
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -137,6 +139,12 @@ export default function Layout({ children }) {
           </div>
         )}
       </header>
+
+      {restricted && (
+        <div className="bg-amber-50 border-b border-amber-200 text-amber-800 text-xs sm:text-sm text-center py-1.5 px-4">
+          Lecture seule depuis cet accès — connecte-toi depuis la salle ou avec un compte manager pour modifier.
+        </div>
+      )}
 
       {/* Page content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-6">

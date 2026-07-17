@@ -4,6 +4,7 @@ const router  = express.Router();
 const db      = require('../db/database');
 const { requireAuth } = require('../middleware/auth');
 const { hashCode, verifyCode } = require('../lib/codeHash');
+const { isPrivileged } = require('../middleware/ipAccess');
 
 function expiresAtMorning(hour = 6) {
   const d = new Date();
@@ -66,7 +67,11 @@ router.post('/select', (req, res) => {
   db.run('INSERT INTO audit_log (user_id, action, entity, entity_id, details) VALUES (?, ?, ?, ?, ?)',
     [user.id, 'switch_profile', 'app_users', user.id, `Profil sélectionné depuis ${req.ip}`]);
 
-  res.json({ token, expires_at: expires, user: { id: user.id, prenom: user.prenom, nom: user.nom, email: user.email, role: user.role } });
+  res.json({
+    token,
+    expires_at: expires,
+    user: { id: user.id, prenom: user.prenom, nom: user.nom, email: user.email, role: user.role, privileged: isPrivileged({ user: { role: user.role }, ip: req.ip }) },
+  });
 });
 
 // POST /api/auth/set-code — crée le code confidentiel d'un profil (uniquement s'il n'en
@@ -103,7 +108,7 @@ router.post('/logout', requireAuth, (req, res) => {
 
 // GET /api/auth/me
 router.get('/me', requireAuth, (req, res) => {
-  res.json(req.user);
+  res.json({ ...req.user, privileged: isPrivileged(req) });
 });
 
 module.exports = { router };

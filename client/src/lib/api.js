@@ -92,6 +92,11 @@ export const api = {
   dupliquerSemainePersonnel: (semaine_source, semaine_cible) =>
     req('/personnel-creneaux/dupliquer', { method: 'POST', body: JSON.stringify({ semaine_source, semaine_cible }) }),
 
+  // IP autorisées (accès en écriture depuis un compte non-manager)
+  getIpAutorisees: () => req('/ip-autorisees'),
+  addIpAutorisee:  (ip, label) => req('/ip-autorisees', { method: 'POST', body: JSON.stringify({ ip, label }) }),
+  deleteIpAutorisee: (id) => req(`/ip-autorisees/${id}`, { method: 'DELETE' }),
+
   // Admin
   seedBallancourt: () => req('/admin/seed-ballancourt', { method: 'POST' }),
   downloadBackup: async () => {

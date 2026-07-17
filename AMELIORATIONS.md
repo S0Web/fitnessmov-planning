@@ -405,6 +405,28 @@ la même fiche d'édition que le tableau au-dessus (comportement identique, just
   large que l'ancien texte) : le seuil d'affichage du menu desktop passe de `md` (768px) à `lg` (1024px)
   pour laisser assez de place. Vérifié sans scroll horizontal de 390px à 1300px de large.
 
+### 44. ✅ Accès en écriture restreint (manager ou IP autorisée) + annuaire masqué — AJOUTÉ
+Jusqu'ici, n'importe quel profil connecté (même non-manager) pouvait tout modifier depuis n'importe où.
+Nouvelle règle : un manager peut toujours tout modifier ; un compte utilisateur simple ne peut modifier
+(et voir l'annuaire) que depuis une IP de la liste blanche (typiquement le Wi-Fi de la salle) — ailleurs,
+lecture seule et annuaire masqué.
+- Nouvelle table `ip_autorisees` + routes `GET/POST/DELETE /api/ip-autorisees` (manager), avec l'IP de
+  l'appelant affichée pour faciliter l'ajout depuis la salle.
+- `app.set('trust proxy', true)` (Railway est derrière un reverse proxy, sans ça `req.ip` renvoie
+  toujours l'IP interne du proxy et la liste blanche ne servirait à rien).
+- Middleware `requireWriteAccess` (laisse passer les lectures, bloque les écritures des non-privilégiés)
+  appliqué à coaches/cours-types/séances/pointeurs/planning personnel/tâches ; `requireAnnuaireAccess`
+  (bloque aussi la lecture) sur l'annuaire ; même règle sur l'auto-édition de son propre profil.
+- `GET /api/auth/me` expose `privileged` : la navbar masque le lien Annuaire et affiche un bandeau
+  "Lecture seule" quand il est à `false`. Nouvel onglet Paramètres > Accès (manager) pour gérer la liste.
+- Testé de bout en bout : écriture/annuaire refusés à un compte simple sans IP whitelistée, acceptés une
+  fois l'IP ajoutée par un manager, toujours acceptés pour un manager quelle que soit l'IP.
+
+**Limite connue à garder en tête** : la plupart des connexions internet (domicile, mobile) ont une IP
+dynamique qui change avec le temps — la liste blanche devra être mise à jour si l'IP de la salle change.
+
+---
+
 ## Idées écartées (ne pas implémenter sans demande explicite)
 - Drag & drop des séances entre jours (gros chantier, faible demande).
 - Vue mensuelle du planning personnel (le rythme de saisie est hebdomadaire).
