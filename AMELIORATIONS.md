@@ -382,6 +382,15 @@ pas de suivi de cumul).
   chaque catégorie supplémentaire cochée, avec un petit badge « Coach » pour le repérer hors de sa section
   d'origine.
 
+### 42. ✅ Vue Gantt journalière du planning personnel — AJOUTÉ
+Le tableau hebdomadaire (une ligne par employé) n'aidait pas à voir d'un coup d'œil qui est présent à un
+instant donné. Nouvelle vue (`PersonnelTimeline`), toujours affichée sous le tableau : une ligne par jour,
+un axe horaire fixe (7h30–22h), une barre colorée par créneau de travail (couleur + initiales de
+l'employé, comme partout ailleurs dans l'appli) positionnée selon l'heure réelle — les coupures (2
+créneaux le même jour) donnent 2 barres sur la même ligne. Travail uniquement (pas les absences), les
+jours sans personne affichent juste le nom du jour sans occuper d'espace inutile. Cliquer une barre ouvre
+la même fiche d'édition que le tableau au-dessus (comportement identique, juste une autre porte d'entrée).
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)
