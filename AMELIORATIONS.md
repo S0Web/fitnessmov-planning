@@ -391,7 +391,19 @@ créneaux le même jour) donnent 2 barres sur la même ligne. Travail uniquement
 jours sans personne affichent juste le nom du jour sans occuper d'espace inutile. Cliquer une barre ouvre
 la même fiche d'édition que le tableau au-dessus (comportement identique, juste une autre porte d'entrée).
 
----
+### 43. ✅ Vue Gantt : lisibilité, séparation des jours, plus de scroll horizontal — CORRIGÉ
+- Les initiales (dans un badge coloré) sont déplacées à droite de la barre au lieu du centre ; l'heure de
+  début s'affiche à gauche de la barre et l'heure de fin à droite (avant : rien n'indiquait clairement
+  quand une barre commençait/finissait). `border-radius` réduit (barres rectangulaires plutôt que pilules)
+  pour mieux voir les bords de début/fin.
+- Séparation des jours renforcée : bordures plus épaisses et plus foncées entre chaque jour, fond en
+  alternance (zebra), le jour courant garde son fond bleu distinct.
+- **Fix scroll horizontal.** La page débordait horizontalement à cause du tableau hebdomadaire
+  (`min-w-[800px]` combiné à `md:overflow-visible`, qui désactivait son propre scroll interne à partir de
+  768px) — corrigé en gardant `overflow-x-auto` en permanence sur le tableau (scroll interne borné plutôt
+  que toute la page qui déborde). Au passage, la navbar débordait aussi pile à 768px (le logo est plus
+  large que l'ancien texte) : le seuil d'affichage du menu desktop passe de `md` (768px) à `lg` (1024px)
+  pour laisser assez de place. Vérifié sans scroll horizontal de 390px à 1300px de large.
 
 ## Idées écartées (ne pas implémenter sans demande explicite)
 - Drag & drop des séances entre jours (gros chantier, faible demande).

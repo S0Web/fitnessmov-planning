@@ -33,7 +33,7 @@ export default function Layout({ children }) {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="sticky top-0 z-30 bg-sky-700 text-white shadow-md">
-        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4 md:gap-8">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center gap-4 lg:gap-8">
           <span className="flex items-center gap-2 flex-shrink-0">
             <img src={logo} alt="Fitnessmov Aqua" className="h-9 w-auto" />
             {salleNom && (
@@ -44,7 +44,7 @@ export default function Layout({ children }) {
           </span>
 
           {/* Nav desktop */}
-          <nav className="hidden md:flex gap-1">
+          <nav className="hidden lg:flex gap-1">
             {links.map(({ to, label }) => (
               <NavLink
                 key={to}
@@ -63,7 +63,7 @@ export default function Layout({ children }) {
 
           {/* Profil + réglages desktop */}
           {user && (
-            <div className="hidden md:flex ml-auto items-center gap-3">
+            <div className="hidden lg:flex ml-auto items-center gap-3">
               <button
                 onClick={switchProfile}
                 title="Changer de profil"
@@ -90,7 +90,7 @@ export default function Layout({ children }) {
             onClick={() => setMenuOpen(o => !o)}
             aria-label="Menu"
             aria-expanded={menuOpen}
-            className="md:hidden ml-auto p-1.5 rounded hover:bg-white/10 transition-colors"
+            className="lg:hidden ml-auto p-1.5 rounded hover:bg-white/10 transition-colors"
           >
             {menuOpen ? <XIcon className="h-6 w-6" /> : <MenuIcon className="h-6 w-6" />}
           </button>
@@ -98,7 +98,7 @@ export default function Layout({ children }) {
 
         {/* Menu mobile déroulant */}
         {menuOpen && (
-          <div className="md:hidden border-t border-white/10 bg-sky-700 px-3 py-2 space-y-1">
+          <div className="lg:hidden border-t border-white/10 bg-sky-700 px-3 py-2 space-y-1">
             {links.map(({ to, label }) => (
               <NavLink
                 key={to}

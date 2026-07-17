@@ -56,61 +56,73 @@ function pctAxe(h) {
 
 function PersonnelTimeline({ semaine, creneaux, today, onOpenCell }) {
   return (
-    <div className="mt-4 border border-gray-200 rounded-xl bg-white shadow-sm overflow-x-auto">
-      <div className="min-w-[700px]">
-        {/* Axe des heures */}
-        <div className="flex border-b border-gray-100">
-          <div className="w-28 flex-shrink-0" />
-          <div className="relative flex-1 h-7">
-            {AXE_TICKS.map(h => (
-              <span key={h} className="absolute top-1.5 text-[10px] text-gray-400 -translate-x-1/2" style={{ left: `${pctAxe(h)}%` }}>
-                {h}h
-              </span>
-            ))}
-          </div>
+    <div className="mt-4 border border-gray-300 rounded-xl bg-white shadow-sm overflow-hidden">
+      {/* Axe des heures */}
+      <div className="flex border-b-2 border-gray-300 bg-gray-50">
+        <div className="w-16 sm:w-24 flex-shrink-0" />
+        <div className="relative flex-1 h-7 mr-8 sm:mr-12">
+          {AXE_TICKS.map(h => (
+            <span key={h} className="absolute top-1.5 text-[10px] text-gray-400 -translate-x-1/2" style={{ left: `${pctAxe(h)}%` }}>
+              {h}h
+            </span>
+          ))}
         </div>
-
-        {semaine.map(date => {
-          const iso = toISO(date);
-          const isToday = iso === today;
-          const parJour = new Map();
-          creneaux
-            .filter(c => c.date === iso && c.type === 'travail' && c.debut && c.fin)
-            .forEach(c => {
-              if (!parJour.has(c.employe_id)) parJour.set(c.employe_id, { emp: { id: c.employe_id, prenom: c.prenom, nom: c.nom }, segments: [] });
-              parJour.get(c.employe_id).segments.push(c);
-            });
-          const lignes = [...parJour.values()].sort((a, b) => a.emp.prenom.localeCompare(b.emp.prenom));
-
-          return (
-            <div key={iso} className="flex border-b border-gray-50 last:border-b-0">
-              <div className={`w-28 flex-shrink-0 px-3 py-2 text-xs font-medium capitalize ${isToday ? 'text-sky-600' : 'text-gray-500'}`}>
-                {date.toLocaleDateString('fr-FR', { weekday: 'long' })}
-              </div>
-              <div className={`relative flex-1 py-2 pr-2 space-y-1.5 ${lignes.length === 0 ? 'h-9' : ''} ${isToday ? 'bg-sky-50/40' : ''}`}>
-                {lignes.map(({ emp, segments }) => (
-                  <div key={emp.id} className="relative h-6">
-                    {segments.map(seg => {
-                      const start = toHours(seg.debut), end = toHours(seg.fin);
-                      return (
-                        <button
-                          key={seg.id}
-                          onClick={() => onOpenCell(emp, iso)}
-                          title={`${emp.prenom} ${emp.nom} : ${fmtTime(seg.debut)} - ${fmtTime(seg.fin)}`}
-                          className="absolute h-6 rounded-full flex items-center justify-center text-white text-[10px] font-bold px-1.5 hover:opacity-90 transition-opacity"
-                          style={{ left: `${pctAxe(start)}%`, width: `${Math.max(pctAxe(end) - pctAxe(start), 4)}%`, backgroundColor: colorForUser(emp.id) }}
-                        >
-                          <span className="truncate">{emp.prenom?.[0]}{emp.nom?.[0]}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
       </div>
+
+      {semaine.map((date, i) => {
+        const iso = toISO(date);
+        const isToday = iso === today;
+        const parJour = new Map();
+        creneaux
+          .filter(c => c.date === iso && c.type === 'travail' && c.debut && c.fin)
+          .forEach(c => {
+            if (!parJour.has(c.employe_id)) parJour.set(c.employe_id, { emp: { id: c.employe_id, prenom: c.prenom, nom: c.nom }, segments: [] });
+            parJour.get(c.employe_id).segments.push(c);
+          });
+        const lignes = [...parJour.values()].sort((a, b) => a.emp.prenom.localeCompare(b.emp.prenom));
+        const rowBg = isToday ? 'bg-sky-50' : (i % 2 === 0 ? 'bg-white' : 'bg-gray-50/70');
+
+        return (
+          <div key={iso} className={`flex border-b-2 border-gray-200 last:border-b-0 ${rowBg}`}>
+            <div className={`w-16 sm:w-24 flex-shrink-0 px-1.5 sm:px-3 py-2 text-[11px] sm:text-xs font-medium capitalize truncate ${isToday ? 'text-sky-600' : 'text-gray-500'}`}>
+              {date.toLocaleDateString('fr-FR', { weekday: 'long' })}
+            </div>
+            <div className="relative flex-1 py-2 pl-2 mr-8 sm:mr-12 space-y-2.5">
+              {lignes.length === 0 && <div className="h-5" />}
+              {lignes.map(({ emp, segments }) => (
+                <div key={emp.id} className="relative h-5">
+                  {segments.map(seg => {
+                    const start = toHours(seg.debut), end = toHours(seg.fin);
+                    const left = pctAxe(start), width = Math.max(pctAxe(end) - left, 2);
+                    return (
+                      <button
+                        key={seg.id}
+                        onClick={() => onOpenCell(emp, iso)}
+                        title={`${emp.prenom} ${emp.nom} : ${fmtTime(seg.debut)} - ${fmtTime(seg.fin)}`}
+                        className="absolute inset-y-0 rounded hover:opacity-90 transition-opacity"
+                        style={{ left: `${left}%`, width: `${width}%`, backgroundColor: colorForUser(emp.id) }}
+                      >
+                        <span className="absolute right-full top-1/2 -translate-y-1/2 pr-1 text-[10px] font-medium text-gray-500 whitespace-nowrap tabular-nums">
+                          {fmtTime(seg.debut)}
+                        </span>
+                        <span className="absolute left-full top-1/2 -translate-y-1/2 pl-1 flex items-center gap-1 whitespace-nowrap">
+                          <span className="text-[10px] font-medium text-gray-500 tabular-nums">{fmtTime(seg.fin)}</span>
+                          <span
+                            className="h-4 w-4 flex-shrink-0 rounded-full flex items-center justify-center text-white text-[9px] font-bold"
+                            style={{ backgroundColor: colorForUser(emp.id) }}
+                          >
+                            {emp.prenom?.[0]}{emp.nom?.[0]}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -353,7 +365,7 @@ export default function PlanningPersonnel() {
           <p className="text-sm text-gray-400 py-10 text-center">Aucun profil — ajoute-en un depuis Paramètres &gt; Utilisateurs.</p>
         ) : (
           <>
-          <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-x-auto md:overflow-visible">
+          <div className="border border-gray-200 rounded-xl bg-white shadow-sm overflow-x-auto">
             <table className="w-full border-collapse table-fixed text-sm min-w-[800px]">
               <colgroup>
                 <col style={{ width: '44px' }} />
