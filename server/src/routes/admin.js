@@ -4,6 +4,7 @@ const router = express.Router();
 const { requireManager } = require('../middleware/auth');
 const { run: importPersonnelHistorique } = require('../db/seedPersonnel');
 const { run: importBallancourt } = require('../db/seedBallancourt');
+const { run: importCorbeilHistorique } = require('../db/seedCorbeil');
 const db = require('../db/database');
 
 // Même résolution de chemin que server/src/db/database.js
@@ -30,6 +31,23 @@ router.post('/seed-ballancourt', requireManager, (req, res) => {
   }
   try {
     const result = importBallancourt();
+    res.json({ ok: true, ...result });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// POST /api/admin/seed-corbeil-historique — importe l'historique des séances
+// (juin 2024 - août 2025) transcrit depuis planning_cours_co.xlsx. Réservé à
+// l'instance Corbeil-Essonnes. N'écrase jamais une séance déjà présente, peut
+// être relancé sans risque — mais ne doit servir qu'une fois (le bouton
+// disparaît côté client une fois l'import marqué fait).
+router.post('/seed-corbeil-historique', requireManager, (req, res) => {
+  if (process.env.SALLE_NOM !== 'Corbeil-Essonnes') {
+    return res.status(403).json({ error: "Import réservé à l'instance Corbeil-Essonnes." });
+  }
+  try {
+    const result = importCorbeilHistorique();
     res.json({ ok: true, ...result });
   } catch (e) {
     res.status(500).json({ error: e.message });

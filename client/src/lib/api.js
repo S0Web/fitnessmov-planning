@@ -105,6 +105,7 @@ export const api = {
 
   // Admin
   seedBallancourt: () => req('/admin/seed-ballancourt', { method: 'POST' }),
+  seedCorbeilHistorique: () => req('/admin/seed-corbeil-historique', { method: 'POST' }),
   downloadBackup: async () => {
     const token = getToken();
     const res = await fetch(`${BASE}/admin/backup`, {

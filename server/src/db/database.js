@@ -513,4 +513,13 @@ db.run(`
   )
 `);
 
+// ─── Marqueurs d'imports ponctuels (ex. historique Corbeil) : sert à masquer un
+// bouton d'import une fois qu'il a été utilisé, sans nouvelle table par import ───
+db.run(`
+  CREATE TABLE IF NOT EXISTS import_markers (
+    nom         TEXT PRIMARY KEY,
+    importe_le  TEXT NOT NULL
+  )
+`);
+
 module.exports = db;

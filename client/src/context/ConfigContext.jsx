@@ -1,13 +1,13 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../lib/api';
 
-const ConfigContext = createContext({ salleNom: '' });
+const ConfigContext = createContext({ salleNom: '', refetch: () => {} });
 
 export function ConfigProvider({ children }) {
   const [config, setConfig] = useState({ salleNom: '' });
 
-  useEffect(() => {
-    api.getConfig()
+  const refetch = useCallback(() => {
+    return api.getConfig()
       .then(c => {
         setConfig(c);
         // Titre d'onglet distinct par salle (pratique quand on gère plusieurs
@@ -17,7 +17,9 @@ export function ConfigProvider({ children }) {
       .catch(() => {});
   }, []);
 
-  return <ConfigContext.Provider value={config}>{children}</ConfigContext.Provider>;
+  useEffect(() => { refetch(); }, [refetch]);
+
+  return <ConfigContext.Provider value={{ ...config, refetch }}>{children}</ConfigContext.Provider>;
 }
 
 export function useConfig() {

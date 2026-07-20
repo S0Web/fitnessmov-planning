@@ -261,7 +261,7 @@ function AccesTab() {
 
 export default function Settings() {
   const { user: me } = useAuth();
-  const { salleNom } = useConfig();
+  const { salleNom, corbeilHistoriqueImporte, refetch: refetchConfig } = useConfig();
   const toast = useToast();
   const isManager = me?.role === 'manager';
   const [tab, setTab]     = useState('profil');
@@ -274,6 +274,8 @@ export default function Settings() {
   const [backupError, setBackupError] = useState(null);
   const [seedingBallancourt, setSeedingBallancourt] = useState(false);
   const [seedBallancourtResult, setSeedBallancourtResult] = useState(null);
+  const [seedingCorbeil, setSeedingCorbeil] = useState(false);
+  const [seedCorbeilResult, setSeedCorbeilResult] = useState(null);
 
   async function handleSeedBallancourt() {
     setSeedingBallancourt(true);
@@ -288,6 +290,23 @@ export default function Settings() {
       setSeedBallancourtResult({ ok: false, message: err.message });
     } finally {
       setSeedingBallancourt(false);
+    }
+  }
+
+  async function handleSeedCorbeil() {
+    setSeedingCorbeil(true);
+    setSeedCorbeilResult(null);
+    try {
+      const res = await api.seedCorbeilHistorique();
+      setSeedCorbeilResult({
+        ok: true,
+        message: `${res.seancesCreees} séance(s) importées (${res.seancesIgnorees} déjà présentes ignorées).`,
+      });
+      await refetchConfig();
+    } catch (err) {
+      setSeedCorbeilResult({ ok: false, message: err.message });
+    } finally {
+      setSeedingCorbeil(false);
     }
   }
 
@@ -454,6 +473,25 @@ export default function Settings() {
               {seedBallancourtResult && (
                 <div className={`text-xs mt-1 ${seedBallancourtResult.ok ? 'text-green-600' : 'text-red-500'}`}>
                   {seedBallancourtResult.ok ? '' : 'Erreur : '}{seedBallancourtResult.message}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Import ponctuel de l'historique Corbeil (juin 2024 - août 2025) — visible
+              uniquement sur cette instance ; le bouton disparaît une fois l'import
+              effectué, mais le résultat reste affiché le temps de la session */}
+          {salleNom === 'Corbeil-Essonnes' && (!corbeilHistoriqueImporte || seedCorbeilResult) && (
+            <div className="mt-6 text-right">
+              {!corbeilHistoriqueImporte && (
+                <button onClick={handleSeedCorbeil} disabled={seedingCorbeil}
+                  className="text-xs text-gray-400 hover:text-gray-600 hover:underline disabled:opacity-50">
+                  {seedingCorbeil ? 'Import…' : "⬇ Importer l'historique des cours (juin 2024 - août 2025)"}
+                </button>
+              )}
+              {seedCorbeilResult && (
+                <div className={`text-xs mt-1 ${seedCorbeilResult.ok ? 'text-green-600' : 'text-red-500'}`}>
+                  {seedCorbeilResult.ok ? '' : 'Erreur : '}{seedCorbeilResult.message}
                 </div>
               )}
             </div>
