@@ -2,23 +2,31 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db/database');
 
-// GET /api/coaches/recap?debut=YYYY-MM-DD&fin=YYYY-MM-DD
+// GET /api/coaches/recap?debut=YYYY-MM-DD&fin=YYYY-MM-DD&effectue=1&paye=1
+// effectue/paye (défaut : tous deux inclus) contrôlent quels statuts comptent comme
+// "heures réalisées" — un cours "payé" a bien eu lieu, au même titre qu'"effectué".
 router.get('/recap', (req, res) => {
-  // Défaut : 12 derniers mois
+  // Défaut : 13 derniers mois
   const now = new Date();
   const defaultFin   = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-28`;
-  const d12          = new Date(now.getFullYear(), now.getMonth() - 11, 1);
-  const defaultDebut = `${d12.getFullYear()}-${String(d12.getMonth()+1).padStart(2,'0')}-01`;
+  const d13          = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+  const defaultDebut = `${d13.getFullYear()}-${String(d13.getMonth()+1).padStart(2,'0')}-01`;
   const debut = req.query.debut || defaultDebut;
   const fin   = req.query.fin   || defaultFin;
 
+  const inclureEffectue = req.query.effectue !== '0';
+  const inclurePaye     = req.query.paye !== '0';
+  const statuts = [];
+  if (inclureEffectue) statuts.push('effectue');
+  if (inclurePaye) statuts.push('paye');
+
   const coaches = db.all('SELECT id, prenom, nom, email, telephone, aqua, fitness, boxe, crosstraining, poledance, actif FROM coaches WHERE supprime = 0 ORDER BY prenom, nom');
-  const seances = db.all(
+  const seances = statuts.length === 0 ? [] : db.all(
     `SELECT coach_id, SUBSTR(date,1,7) as mois, SUM(duree_minutes) as mins
      FROM seances
-     WHERE statut = 'effectue' AND date BETWEEN ? AND ?
+     WHERE statut IN (${statuts.map(() => '?').join(',')}) AND date BETWEEN ? AND ?
      GROUP BY coach_id, mois`,
-    [debut, fin]
+    [...statuts, debut, fin]
   );
 
   const map = {};

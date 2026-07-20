@@ -2,12 +2,27 @@ const express = require('express');
 const router  = express.Router();
 const db      = require('../db/database');
 
-// GET /api/dashboard?debut=YYYY-MM-DD&fin=YYYY-MM-DD
+// GET /api/dashboard?periode=tout|(rien)&debut=YYYY-MM-DD&fin=YYYY-MM-DD&statut=programme|effectue|annule
+// periode=tout : aucun filtre de date (tout l'historique). Sinon, debut/fin (défaut :
+// année scolaire en cours). statut : restreint Top Cours/Top Coachs à cette catégorie
+// (les KPI et la fréquentation mensuelle affichent toujours les 3 catégories, c'est
+// juste Top Cours/Top Coachs qui changent de base de calcul — ex. "annule" donne le
+// top des cours/coachs les plus annulés au lieu des plus réalisés).
 router.get('/', (req, res) => {
   const now   = new Date();
   const year  = now.getMonth() >= 7 ? now.getFullYear() : now.getFullYear() - 1;
-  const debut = req.query.debut || `${year}-08-01`;
-  const fin   = req.query.fin   || `${year + 1}-07-31`;
+  const toutTemps = req.query.periode === 'tout';
+  const debut = toutTemps ? null : (req.query.debut || `${year}-08-01`);
+  const fin   = toutTemps ? null : (req.query.fin   || `${year + 1}-07-31`);
+
+  const dateCond   = toutTemps ? '1=1' : 'date BETWEEN ? AND ?';
+  const dateCondS  = toutTemps ? '1=1' : 's.date BETWEEN ? AND ?';
+  const dateParams = toutTemps ? [] : [debut, fin];
+
+  const statutCat = ['programme', 'effectue', 'annule'].includes(req.query.statut) ? req.query.statut : null;
+  const topStatutClause = statutCat === 'programme' ? '1=1'
+    : statutCat === 'annule' ? "s.statut = 'annule'"
+    : "s.statut IN ('effectue','paye')"; // défaut ou 'effectue'
 
   // ── KPI globaux ────────────────────────────────────────────────
   const kpi = db.get(`
@@ -15,8 +30,8 @@ router.get('/', (req, res) => {
       COUNT(*) AS total,
       SUM(CASE WHEN statut IN ('effectue','paye') THEN 1 ELSE 0 END) AS effectues,
       SUM(CASE WHEN statut = 'annule' THEN 1 ELSE 0 END) AS annules
-    FROM seances WHERE date BETWEEN ? AND ?
-  `, [debut, fin]);
+    FROM seances WHERE ${dateCond}
+  `, dateParams);
 
   // ── Fréquentation mensuelle ────────────────────────────────────
   const mensuel = db.all(`
@@ -28,9 +43,9 @@ router.get('/', (req, res) => {
       SUM(CASE WHEN statut IN ('effectue','paye') THEN nb_presents ELSE 0 END) AS effectif,
       SUM(CASE WHEN statut IN ('effectue','paye') THEN duree_minutes ELSE 0 END) AS total_minutes
     FROM seances
-    WHERE date BETWEEN ? AND ?
+    WHERE ${dateCond}
     GROUP BY mois ORDER BY mois
-  `, [debut, fin]);
+  `, dateParams);
 
   // ── Top cours ──────────────────────────────────────────────────
   const topCours = db.all(`
@@ -41,11 +56,11 @@ router.get('/', (req, res) => {
       ROUND(AVG(CASE WHEN s.nb_presents IS NOT NULL THEN s.nb_presents END), 1) AS moy_presents
     FROM seances s
     JOIN cours_types ct ON ct.id = s.cours_type_id
-    WHERE s.date BETWEEN ? AND ? AND s.statut IN ('effectue','paye')
+    WHERE ${dateCondS} AND ${topStatutClause}
     GROUP BY s.cours_type_id
     ORDER BY seances DESC
     LIMIT 10
-  `, [debut, fin]);
+  `, dateParams);
 
   // ── Top coachs ─────────────────────────────────────────────────
   const topCoachs = db.all(`
@@ -56,13 +71,13 @@ router.get('/', (req, res) => {
       ROUND(AVG(CASE WHEN s.nb_presents IS NOT NULL THEN s.nb_presents END), 1) AS moy_presents
     FROM seances s
     JOIN coaches c ON c.id = s.coach_id
-    WHERE s.date BETWEEN ? AND ? AND s.statut IN ('effectue','paye')
+    WHERE ${dateCondS} AND ${topStatutClause}
     GROUP BY s.coach_id
     ORDER BY heures DESC
     LIMIT 10
-  `, [debut, fin]);
+  `, dateParams);
 
-  res.json({ kpi, mensuel, topCours, topCoachs, debut, fin });
+  res.json({ kpi, mensuel, topCours, topCoachs, debut, fin, statutCat });
 });
 
 module.exports = router;

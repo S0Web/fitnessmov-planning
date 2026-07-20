@@ -425,6 +425,20 @@ lecture seule et annuaire masqué.
 **Limite connue à garder en tête** : la plupart des connexions internet (domicile, mobile) ont une IP
 dynamique qui change avec le temps — la liste blanche devra être mise à jour si l'IP de la salle change.
 
+### 45. ✅ Coaches : filtres période/catégorie sur le tableau de bord, 13 mois, heures payées — AJOUTÉ/CORRIGÉ
+- **Filtre période** sur le Tableau de bord : « De tout temps » (aucun filtre de date), « Année scolaire »
+  (sélecteur d'année), ou « Date libre » (Année seule → toute l'année depuis le 1er janvier ; + Mois →
+  ce mois ; + Jour → ce jour précis). `GET /api/dashboard` accepte `periode=tout` ou `debut`/`fin`.
+- **Filtre catégorie** : cliquer sur « Prog. » / « Effect. » / « Annulés » (colonnes de la Fréquentation
+  mensuelle, ou les cartes KPI équivalentes) recalcule Top Cours et Top Coachs sur cette seule catégorie
+  (ex. « Annulés » donne le top des cours/coachs les plus annulés, utile pour repérer les soucis récurrents)
+  — un clic supplémentaire sur la même catégorie l'enlève. `GET /api/dashboard?statut=programme|effectue|annule`.
+- **Récapitulatif des heures** passé de 12 à 13 derniers mois (colonne Coach resserrée pour faire de la
+  place à la colonne supplémentaire).
+- **Heures payées comptées comme réalisées** : un cours au statut « Payé » a bien eu lieu, au même titre
+  qu'« Effectué ». Deux cases à cocher (Effectuées/Payées, les deux cochées par défaut) contrôlent quels
+  statuts comptent dans le récapitulatif des heures par coach (`GET /api/coaches/recap?effectue=&paye=`).
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

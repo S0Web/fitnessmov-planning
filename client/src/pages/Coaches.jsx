@@ -14,10 +14,10 @@ const MOIS_COURTS = {
   '07':'Jul','08':'Aoû','09':'Sep','10':'Oct','11':'Nov','12':'Déc',
 };
 
-function getLast12Months() {
+function getLast13Months() {
   const now    = new Date();
   const months = [];
-  for (let i = 11; i >= 0; i--) {
+  for (let i = 12; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
   }
@@ -25,6 +25,14 @@ function getLast12Months() {
   const finD  = new Date(now.getFullYear(), now.getMonth()+1, 0);
   const fin   = `${finD.getFullYear()}-${String(finD.getMonth()+1).padStart(2,'0')}-${String(finD.getDate()).padStart(2,'0')}`;
   return { months, debut, fin };
+}
+
+function periodeLabel(mode, anneeScolaire, libreAnnee, libreMois, libreJour) {
+  if (mode === 'tout') return 'De tout temps';
+  if (mode === 'scolaire') return `Saison ${anneeScolaire}–${anneeScolaire + 1}`;
+  if (!libreMois) return `Année ${libreAnnee}`;
+  if (!libreJour) return `${MOIS_LABELS[libreMois]} ${libreAnnee}`;
+  return `${libreJour}/${libreMois}/${libreAnnee}`;
 }
 
 function getAcademicYear() {
@@ -220,6 +228,8 @@ function CoachModal({ coach, onSave, onToggle, onDelete, onClose }) {
 
 // ── Page principale ────────────────────────────────────────────────────────────
 
+const CATEGORIE_LABELS = { programme: 'Programmés', effectue: 'Effectués', annule: 'Annulés' };
+
 export default function Coaches() {
   const [recap, setRecap]       = useState(null);
   const [dashboard, setDash]    = useState(null);
@@ -227,27 +237,59 @@ export default function Coaches() {
   const [showInactifs, setShowInactifs] = useState(false);
   const [loading, setLoading]   = useState(true);
 
-  const { months, debut, fin }         = getLast12Months();
-  const { debut: dDash, fin: fDash }   = getAcademicYear();
+  // Récapitulatif des heures : quels statuts comptent comme "réalisé"
+  const [inclureEffectue, setInclureEffectue] = useState(true);
+  const [inclurePaye, setInclurePaye]         = useState(true);
+
+  // Tableau de bord : période
+  const [periodeMode, setPeriodeMode] = useState('scolaire'); // 'tout' | 'scolaire' | 'libre'
+  const [anneeScolaire, setAnneeScolaire] = useState(() => getAcademicYear().year);
+  const [libreAnnee, setLibreAnnee] = useState(() => new Date().getFullYear());
+  const [libreMois, setLibreMois]   = useState('');
+  const [libreJour, setLibreJour]   = useState('');
+  // Tableau de bord : catégorie (clic sur Prog./Effect./Annulés)
+  const [statutCat, setStatutCat] = useState(null);
+
+  const { months, debut, fin } = getLast13Months();
   const currentMois = (() => {
     const n = new Date();
     return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}`;
   })();
 
+  function dashboardParams() {
+    const base = periodeMode === 'tout' ? { periode: 'tout' }
+      : periodeMode === 'scolaire' ? { debut: `${anneeScolaire}-08-01`, fin: `${anneeScolaire + 1}-07-31` }
+      : (() => {
+          const y = libreAnnee;
+          if (!libreMois) return { debut: `${y}-01-01`, fin: `${y}-12-31` };
+          if (!libreJour) {
+            const finD = new Date(y, Number(libreMois), 0).getDate();
+            return { debut: `${y}-${libreMois}-01`, fin: `${y}-${libreMois}-${String(finD).padStart(2, '0')}` };
+          }
+          return { debut: `${y}-${libreMois}-${libreJour}`, fin: `${y}-${libreMois}-${libreJour}` };
+        })();
+    return statutCat ? { ...base, statut: statutCat } : base;
+  }
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const [r, d] = await Promise.all([
-        api.getCoachesRecap(debut, fin),
-        api.getDashboard(dDash, fDash),
+        api.getCoachesRecap({ debut, fin, effectue: inclureEffectue ? 1 : 0, paye: inclurePaye ? 1 : 0 }),
+        api.getDashboard(dashboardParams()),
       ]);
       setRecap(r);
       setDash(d);
     } catch(e) { console.error(e); }
     finally { setLoading(false); }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inclureEffectue, inclurePaye, periodeMode, anneeScolaire, libreAnnee, libreMois, libreJour, statutCat]);
 
   useEffect(() => { load(); }, [load]);
+
+  function toggleCategorie(cat) {
+    setStatutCat(prev => prev === cat ? null : cat);
+  }
 
   async function handleSave(form) {
     if (modal?.id) await api.updateCoach(modal.id, form);
@@ -283,7 +325,7 @@ export default function Coaches() {
   const mensuel = dashboard?.mensuel || [];
   const topCours = dashboard?.topCours || [];
   const topCoachs = dashboard?.topCoachs || [];
-  const saison = getAcademicYear();
+  const ANNEES_DISPONIBLES = Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - 5 + i);
 
   return (
     <div className="space-y-8">
@@ -296,9 +338,17 @@ export default function Coaches() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
           <div>
             <h1 className="text-lg font-bold text-gray-800">Récapitulatif des heures effectuées</h1>
-            <p className="text-xs text-gray-400 mt-0.5">12 derniers mois · Statut « Effectué » uniquement</p>
+            <p className="text-xs text-gray-400 mt-0.5">13 derniers mois</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <label className="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer">
+              <input type="checkbox" checked={inclureEffectue} onChange={e => setInclureEffectue(e.target.checked)} className="rounded" />
+              Effectuées
+            </label>
+            <label className="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer">
+              <input type="checkbox" checked={inclurePaye} onChange={e => setInclurePaye(e.target.checked)} className="rounded" />
+              Payées
+            </label>
             <label className="flex items-center gap-1.5 text-sm text-gray-500 cursor-pointer">
               <input type="checkbox" checked={showInactifs} onChange={e => setShowInactifs(e.target.checked)} className="rounded" />
               Inactifs
@@ -318,7 +368,7 @@ export default function Coaches() {
           <table className="w-full border-collapse text-sm min-w-[860px]">
             <thead>
               <tr>
-                <th className={`${TH} text-left sticky left-0 z-30 bg-gray-100`} style={{ minWidth: 130 }}>Coach</th>
+                <th className={`${TH} text-left sticky left-0 z-30 bg-gray-100`} style={{ minWidth: 92 }}>Coach</th>
                 {months.map(m => (
                   <th key={m} className={`${TH}`}
                     style={m === currentMois ? { color: '#2fa8cc', backgroundColor: '#eef9fd' } : {}}>
@@ -333,8 +383,9 @@ export default function Coaches() {
                 const bg = i % 2 === 0 ? '#ffffff' : '#f9fafb';
                 return (
                   <tr key={coach.id} style={{ backgroundColor: bg }} className={coach.actif ? '' : 'opacity-40'}>
-                    <td className="sticky left-0 z-10 border-b border-gray-100 px-3 py-1.5 font-semibold" style={{ backgroundColor: bg }}>
-                      <button onClick={() => setModal(coach)} className="hover:underline text-left" style={{ color: '#1a7a9b' }}>
+                    <td className="sticky left-0 z-10 border-b border-gray-100 px-2 py-1.5 font-semibold" style={{ backgroundColor: bg, maxWidth: 92 }}>
+                      <button onClick={() => setModal(coach)} title={`${coach.prenom} ${coach.nom}`}
+                        className="hover:underline text-left truncate block w-full" style={{ color: '#1a7a9b' }}>
                         {coach.prenom} {coach.nom}
                       </button>
                     </td>
@@ -382,24 +433,73 @@ export default function Coaches() {
       {!loading && dashboard && (
         <div>
           {/* Titre dashboard */}
-          <h2 className="text-lg font-bold text-gray-800 mb-4">
-            Tableau de bord · Saison {saison.year}–{saison.year + 1}
+          <h2 className="text-lg font-bold text-gray-800 mb-3">
+            Tableau de bord · {periodeLabel(periodeMode, anneeScolaire, libreAnnee, libreMois, libreJour)}
           </h2>
 
-          {/* KPI cards */}
+          {/* Filtre période */}
+          <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+            <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide">Période</span>
+            <select value={periodeMode} onChange={e => setPeriodeMode(e.target.value)}
+              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
+              <option value="scolaire">Année scolaire</option>
+              <option value="libre">Date libre</option>
+              <option value="tout">De tout temps</option>
+            </select>
+            {periodeMode === 'scolaire' && (
+              <select value={anneeScolaire} onChange={e => setAnneeScolaire(Number(e.target.value))}
+                className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
+                {ANNEES_DISPONIBLES.map(y => <option key={y} value={y}>{y}–{y + 1}</option>)}
+              </select>
+            )}
+            {periodeMode === 'libre' && (
+              <>
+                <select value={libreAnnee} onChange={e => setLibreAnnee(Number(e.target.value))}
+                  className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
+                  {ANNEES_DISPONIBLES.map(y => <option key={y} value={y}>{y}</option>)}
+                </select>
+                <select value={libreMois} onChange={e => { setLibreMois(e.target.value); setLibreJour(''); }}
+                  className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
+                  <option value="">Toute l&apos;année</option>
+                  {Object.entries(MOIS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+                {libreMois && (
+                  <select value={libreJour} onChange={e => setLibreJour(e.target.value)}
+                    className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
+                    <option value="">Tout le mois</option>
+                    {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
+                )}
+              </>
+            )}
+            {statutCat && (
+              <button onClick={() => setStatutCat(null)}
+                className="ml-1 text-xs px-2.5 py-1 rounded-full bg-sky-100 text-sky-700 hover:bg-sky-200">
+                Top Cours/Coachs filtrés : {CATEGORIE_LABELS[statutCat]} ✕
+              </button>
+            )}
+          </div>
+
+          {/* KPI cards (cliquables : filtrent Top Cours/Top Coachs par catégorie) */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <div className="border-2 rounded-lg p-5 text-center" style={{ borderColor: '#5bcae8', backgroundColor: '#eef9fd' }}>
+            <button onClick={() => toggleCategorie('programme')}
+              className="border-2 rounded-lg p-5 text-center transition-shadow"
+              style={{ borderColor: '#5bcae8', backgroundColor: '#eef9fd', boxShadow: statutCat === 'programme' ? '0 0 0 3px #5bcae880' : undefined }}>
               <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Cours programmés</div>
               <div className="text-4xl font-extrabold" style={{ color: '#1a7a9b' }}>{kpi.total ?? '—'}</div>
-            </div>
-            <div className="border-2 rounded-lg p-5 text-center" style={{ borderColor: '#86efac', backgroundColor: '#f0fdf4' }}>
+            </button>
+            <button onClick={() => toggleCategorie('effectue')}
+              className="border-2 rounded-lg p-5 text-center transition-shadow"
+              style={{ borderColor: '#86efac', backgroundColor: '#f0fdf4', boxShadow: statutCat === 'effectue' ? '0 0 0 3px #86efac80' : undefined }}>
               <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Cours effectués</div>
               <div className="text-4xl font-extrabold text-green-600">{kpi.effectues ?? '—'}</div>
-            </div>
-            <div className="border-2 rounded-lg p-5 text-center" style={{ borderColor: '#fca5a5', backgroundColor: '#fef2f2' }}>
+            </button>
+            <button onClick={() => toggleCategorie('annule')}
+              className="border-2 rounded-lg p-5 text-center transition-shadow"
+              style={{ borderColor: '#fca5a5', backgroundColor: '#fef2f2', boxShadow: statutCat === 'annule' ? '0 0 0 3px #fca5a580' : undefined }}>
               <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Taux d&apos;annulation</div>
               <div className="text-4xl font-extrabold text-red-500">{pct(kpi.annules, kpi.total)}</div>
-            </div>
+            </button>
           </div>
 
           {/* Tableau mensuel + graphique */}
@@ -410,9 +510,18 @@ export default function Coaches() {
               <table className="w-full border-collapse text-xs min-w-[520px]">
                 <thead>
                   <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
-                    {['Mois','Prog.','Effect.','Annulés','Annul. %','Effectif','Moy.','Heures'].map((h, i) => (
-                      <th key={h} className={`px-2 py-1.5 font-bold ${i === 0 ? 'text-left' : 'text-center'}`}>{h}</th>
-                    ))}
+                    {['Mois','Prog.','Effect.','Annulés','Annul. %','Effectif','Moy.','Heures'].map((h, i) => {
+                      const cat = { 1: 'programme', 2: 'effectue', 3: 'annule' }[i];
+                      const actif = cat && statutCat === cat;
+                      return (
+                        <th key={h}
+                          onClick={cat ? () => toggleCategorie(cat) : undefined}
+                          title={cat ? `Filtrer Top Cours/Top Coachs par : ${CATEGORIE_LABELS[cat]}` : undefined}
+                          className={`px-2 py-1.5 font-bold ${i === 0 ? 'text-left' : 'text-center'} ${cat ? 'cursor-pointer select-none hover:bg-white/10' : ''} ${actif ? 'underline decoration-2 underline-offset-2' : ''}`}>
+                          {h}
+                        </th>
+                      );
+                    })}
                   </tr>
                 </thead>
                 <tbody>
@@ -458,7 +567,9 @@ export default function Coaches() {
           {/* Top cours + Top coachs */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="overflow-x-auto">
-              <h3 className="text-sm font-bold text-gray-700 mb-2">Top Cours</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-2">
+                Top Cours{statutCat && <span className="text-gray-400 font-normal"> · {CATEGORIE_LABELS[statutCat]}</span>}
+              </h3>
               <table className="w-full border-collapse text-xs min-w-[360px]">
                 <thead>
                   <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
@@ -481,7 +592,9 @@ export default function Coaches() {
             </div>
 
             <div className="overflow-x-auto">
-              <h3 className="text-sm font-bold text-gray-700 mb-2">Top Coachs</h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-2">
+                Top Coachs{statutCat && <span className="text-gray-400 font-normal"> · {CATEGORIE_LABELS[statutCat]}</span>}
+              </h3>
               <table className="w-full border-collapse text-xs min-w-[360px]">
                 <thead>
                   <tr style={{ backgroundColor: '#c9a464', color: '#fff' }}>

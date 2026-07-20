@@ -56,8 +56,14 @@ export const api = {
   deleteTask:  (id) => req(`/tasks/${id}`, { method: 'DELETE' }),
 
   // Coaches
-  getCoachesRecap: (debut, fin) => req(`/coaches/recap?debut=${debut}&fin=${fin}`),
-  getDashboard:    (debut, fin) => req(`/dashboard?debut=${debut}&fin=${fin}`),
+  getCoachesRecap: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
+    return req(`/coaches/recap${qs ? `?${qs}` : ''}`);
+  },
+  getDashboard: (params = {}) => {
+    const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== '' && v != null)).toString();
+    return req(`/dashboard${qs ? `?${qs}` : ''}`);
+  },
   getCoaches:      (tous = false) => req(`/coaches${tous ? '?tous=1' : ''}`),
   createCoach:     (data) => req('/coaches', { method: 'POST', body: JSON.stringify(data) }),
   updateCoach:     (id, data) => req(`/coaches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
