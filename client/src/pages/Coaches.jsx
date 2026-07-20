@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Plus } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Plus, Calendar, CalendarRange, Infinity as InfinityIcon } from 'lucide-react';
 import { api } from '../lib/api';
 import { DISCIPLINE_CONFIG } from '../lib/utils';
 
@@ -27,12 +27,17 @@ function getLast13Months() {
   return { months, debut, fin };
 }
 
-function periodeLabel(mode, anneeScolaire, libreAnnee, libreMois, libreJour) {
+function fmtDateFr(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function periodeLabel(mode, anneeScolaire, plageDebut, plageFin) {
   if (mode === 'tout') return 'De tout temps';
   if (mode === 'scolaire') return `Saison ${anneeScolaire}–${anneeScolaire + 1}`;
-  if (!libreMois) return `Année ${libreAnnee}`;
-  if (!libreJour) return `${MOIS_LABELS[libreMois]} ${libreAnnee}`;
-  return `${libreJour}/${libreMois}/${libreAnnee}`;
+  if (!plageDebut || !plageFin) return 'Plage personnalisée';
+  return `${fmtDateFr(plageDebut)} → ${fmtDateFr(plageFin)}`;
 }
 
 function getAcademicYear() {
@@ -235,19 +240,20 @@ export default function Coaches() {
   const [dashboard, setDash]    = useState(null);
   const [modal, setModal]       = useState(null);
   const [showInactifs, setShowInactifs] = useState(false);
-  const [loading, setLoading]   = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const reqIdRef = useRef(0);
 
   // Récapitulatif des heures : quels statuts comptent comme "réalisé"
   const [inclureEffectue, setInclureEffectue] = useState(true);
   const [inclurePaye, setInclurePaye]         = useState(true);
 
   // Tableau de bord : période
-  const [periodeMode, setPeriodeMode] = useState('scolaire'); // 'tout' | 'scolaire' | 'libre'
+  const [periodeMode, setPeriodeMode] = useState('scolaire'); // 'tout' | 'scolaire' | 'plage'
   const [anneeScolaire, setAnneeScolaire] = useState(() => getAcademicYear().year);
-  const [libreAnnee, setLibreAnnee] = useState(() => new Date().getFullYear());
-  const [libreMois, setLibreMois]   = useState('');
-  const [libreJour, setLibreJour]   = useState('');
-  // Tableau de bord : catégorie (clic sur Prog./Effect./Annulés)
+  const [plageDebut, setPlageDebut] = useState(() => getAcademicYear().debut);
+  const [plageFin, setPlageFin]     = useState(() => getAcademicYear().fin);
+  // Tableau de bord : catégorie (clic sur Prog./Effect./Annulés) — mise en valeur +
+  // Top Cours/Top Coachs se recalculent sur cette seule catégorie.
   const [statutCat, setStatutCat] = useState(null);
 
   const { months, debut, fin } = getLast13Months();
@@ -259,31 +265,27 @@ export default function Coaches() {
   function dashboardParams() {
     const base = periodeMode === 'tout' ? { periode: 'tout' }
       : periodeMode === 'scolaire' ? { debut: `${anneeScolaire}-08-01`, fin: `${anneeScolaire + 1}-07-31` }
-      : (() => {
-          const y = libreAnnee;
-          if (!libreMois) return { debut: `${y}-01-01`, fin: `${y}-12-31` };
-          if (!libreJour) {
-            const finD = new Date(y, Number(libreMois), 0).getDate();
-            return { debut: `${y}-${libreMois}-01`, fin: `${y}-${libreMois}-${String(finD).padStart(2, '0')}` };
-          }
-          return { debut: `${y}-${libreMois}-${libreJour}`, fin: `${y}-${libreMois}-${libreJour}` };
-        })();
+      : { debut: plageDebut, fin: plageFin };
     return statutCat ? { ...base, statut: statutCat } : base;
   }
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const myId = ++reqIdRef.current;
+    setRefreshing(true);
     try {
       const [r, d] = await Promise.all([
         api.getCoachesRecap({ debut, fin, effectue: inclureEffectue ? 1 : 0, paye: inclurePaye ? 1 : 0 }),
         api.getDashboard(dashboardParams()),
       ]);
+      if (myId !== reqIdRef.current) return; // une requête plus récente est en cours : on ignore
       setRecap(r);
       setDash(d);
     } catch(e) { console.error(e); }
-    finally { setLoading(false); }
+    finally {
+      if (myId === reqIdRef.current) setRefreshing(false);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inclureEffectue, inclurePaye, periodeMode, anneeScolaire, libreAnnee, libreMois, libreJour, statutCat]);
+  }, [inclureEffectue, inclurePaye, periodeMode, anneeScolaire, plageDebut, plageFin, statutCat]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -361,10 +363,10 @@ export default function Coaches() {
           </div>
         </div>
 
-        {loading ? (
+        {recap === null ? (
           <div className="text-center py-10 text-gray-400 text-sm">Chargement…</div>
         ) : (
-          <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <div className={`overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
           <table className="w-full border-collapse text-sm min-w-[860px]">
             <thead>
               <tr>
@@ -430,47 +432,48 @@ export default function Coaches() {
           SECTION 2 — Dashboard KPI (saison en cours)
       ════════════════════════════════════════════════════════════ */}
 
-      {!loading && dashboard && (
-        <div>
+      {dashboard && (
+        <div className={`transition-opacity duration-200 ${refreshing ? 'opacity-60' : 'opacity-100'}`}>
           {/* Titre dashboard */}
           <h2 className="text-lg font-bold text-gray-800 mb-3">
-            Tableau de bord · {periodeLabel(periodeMode, anneeScolaire, libreAnnee, libreMois, libreJour)}
+            Tableau de bord · {periodeLabel(periodeMode, anneeScolaire, plageDebut, plageFin)}
           </h2>
 
           {/* Filtre période */}
-          <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
-            <span className="font-semibold text-gray-500 text-xs uppercase tracking-wide">Période</span>
-            <select value={periodeMode} onChange={e => setPeriodeMode(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
-              <option value="scolaire">Année scolaire</option>
-              <option value="libre">Date libre</option>
-              <option value="tout">De tout temps</option>
-            </select>
+          <div className="flex flex-wrap items-center gap-3 mb-4 text-sm">
+            <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1 gap-1">
+              {[
+                { mode: 'scolaire', label: 'Année scolaire', Icon: Calendar },
+                { mode: 'plage', label: 'Plage personnalisée', Icon: CalendarRange },
+                { mode: 'tout', label: 'De tout temps', Icon: InfinityIcon },
+              ].map(({ mode, label, Icon }) => (
+                <button
+                  key={mode}
+                  onClick={() => setPeriodeMode(mode)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    periodeMode === mode
+                      ? 'bg-white text-sky-700 shadow-sm'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}>
+                  <Icon size={15} />
+                  {label}
+                </button>
+              ))}
+            </div>
             {periodeMode === 'scolaire' && (
               <select value={anneeScolaire} onChange={e => setAnneeScolaire(Number(e.target.value))}
                 className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
                 {ANNEES_DISPONIBLES.map(y => <option key={y} value={y}>{y}–{y + 1}</option>)}
               </select>
             )}
-            {periodeMode === 'libre' && (
-              <>
-                <select value={libreAnnee} onChange={e => setLibreAnnee(Number(e.target.value))}
-                  className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
-                  {ANNEES_DISPONIBLES.map(y => <option key={y} value={y}>{y}</option>)}
-                </select>
-                <select value={libreMois} onChange={e => { setLibreMois(e.target.value); setLibreJour(''); }}
-                  className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
-                  <option value="">Toute l&apos;année</option>
-                  {Object.entries(MOIS_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
-                </select>
-                {libreMois && (
-                  <select value={libreJour} onChange={e => setLibreJour(e.target.value)}
-                    className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300">
-                    <option value="">Tout le mois</option>
-                    {Array.from({ length: 31 }, (_, i) => String(i + 1).padStart(2, '0')).map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                )}
-              </>
+            {periodeMode === 'plage' && (
+              <div className="inline-flex items-center gap-2">
+                <input type="date" value={plageDebut} onChange={e => setPlageDebut(e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300" />
+                <span className="text-gray-400">→</span>
+                <input type="date" value={plageFin} onChange={e => setPlageFin(e.target.value)}
+                  className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300" />
+              </div>
             )}
             {statutCat && (
               <button onClick={() => setStatutCat(null)}

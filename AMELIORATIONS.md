@@ -439,6 +439,26 @@ dynamique qui change avec le temps — la liste blanche devra être mise à jour
   qu'« Effectué ». Deux cases à cocher (Effectuées/Payées, les deux cochées par défaut) contrôlent quels
   statuts comptent dans le récapitulatif des heures par coach (`GET /api/coaches/recap?effectue=&paye=`).
 
+### 46. ✅ Coaches : fluidité des filtres, plage de dates libre, redesign du sélecteur de période — CORRIGÉ/AJOUTÉ
+- **Fluidité** : remplacement du booléen `loading` bloquant par un `refreshing` qui atténue (opacity)
+  le contenu déjà affiché sans le démonter, plus un état `recap`/`dashboard` initialisé à `null` qui
+  ne déclenche l'écran « Chargement… » qu'au tout premier chargement. Un compteur `reqIdRef` (`useRef`)
+  ignore les réponses de requêtes devenues obsolètes si l'utilisateur change plusieurs filtres vite.
+  Touche n'importe quel filtre (période, catégorie, cases Effectuées/Payées) ne provoque plus de reflash
+  de toute la page — juste un léger fondu.
+- **Plage de dates libre** : l'ancien mode « Date libre » (3 `<select>` Année/Mois/Jour en cascade)
+  est remplacé par un mode « Plage personnalisée » avec deux `<input type="date">` (`plageDebut`/
+  `plageFin`), permettant nativement une plage à cheval sur deux années (ex. octobre 2025 → janvier 2026).
+- **Redesign du sélecteur de période** : le `<select>` de mode est remplacé par un contrôle segmenté
+  (icônes lucide `Calendar`/`CalendarRange`/`Infinity`) — Année scolaire / Plage personnalisée / De
+  tout temps. Le titre du tableau de bord affiche la plage choisie en toutes lettres (ex.
+  « 1 oct. 2025 → 31 janv. 2026 »).
+- **Filtre catégorie** : confirmé comme volontairement limité à une mise en valeur visuelle (soulignement
+  d'en-tête + anneau sur la carte KPI + puce de filtre) plutôt qu'un recalcul des KPI/Fréquentation
+  mensuelle — ces deux blocs affichent par construction déjà le détail des 3 catégories ; seuls Top
+  Cours et Top Coachs se recalculent réellement sur la catégorie sélectionnée (déjà en place, inchangé).
+**Fichiers.** `client/src/pages/Coaches.jsx`.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)
