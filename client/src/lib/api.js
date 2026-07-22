@@ -65,6 +65,7 @@ export const api = {
     return req(`/dashboard${qs ? `?${qs}` : ''}`);
   },
   getCoaches:      (tous = false) => req(`/coaches${tous ? '?tous=1' : ''}`),
+  getCoachStats:   (id) => req(`/coaches/${id}/stats`),
   createCoach:     (data) => req('/coaches', { method: 'POST', body: JSON.stringify(data) }),
   updateCoach:     (id, data) => req(`/coaches/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   patchCoach:      (id, data) => req(`/coaches/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),

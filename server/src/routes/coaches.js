@@ -44,6 +44,46 @@ router.get('/recap', (req, res) => {
   res.json({ coaches: result });
 });
 
+// GET /api/coaches/:id/stats — KPI d'un coach sur 3 périodes : 30 derniers jours,
+// depuis le 1er septembre le plus récent, et de tout temps. Ne compte que les
+// séances effectivement données (effectué/payé), comme le récapitulatif des heures.
+router.get('/:id/stats', (req, res) => {
+  const coach = db.get('SELECT id FROM coaches WHERE id = ?', [req.params.id]);
+  if (!coach) return res.status(404).json({ error: 'Coach introuvable' });
+
+  const now = new Date();
+  const pad = (v) => String(v).padStart(2, '0');
+  const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+  const il30j = new Date(now); il30j.setDate(il30j.getDate() - 30);
+  const anneeSeptembre = now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1;
+  const depuisSeptembre = new Date(anneeSeptembre, 8, 1);
+
+  function periode(debut) {
+    const cond = debut ? 'date >= ?' : '1=1';
+    const params = debut ? [req.params.id, debut] : [req.params.id];
+    const row = db.get(
+      `SELECT COUNT(*) AS nbCours,
+              ROUND(SUM(duree_minutes) / 60.0, 2) AS heures,
+              ROUND(AVG(CASE WHEN nb_presents IS NOT NULL THEN nb_presents END), 1) AS effectifMoyen
+       FROM seances
+       WHERE coach_id = ? AND statut IN ('effectue', 'paye') AND ${cond}`,
+      params
+    );
+    return {
+      nbCours: row.nbCours || 0,
+      heures: row.heures || 0,
+      effectifMoyen: row.effectifMoyen ?? null,
+    };
+  }
+
+  res.json({
+    derniers30j:     periode(iso(il30j)),
+    depuisSeptembre: periode(iso(depuisSeptembre)),
+    toutTemps:       periode(null),
+  });
+});
+
 // GET /api/coaches — liste tous les coaches (actifs par défaut)
 router.get('/', (req, res) => {
   const { tous } = req.query;

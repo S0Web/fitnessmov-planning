@@ -459,6 +459,32 @@ dynamique qui change avec le temps — la liste blanche devra être mise à jour
   Cours et Top Coachs se recalculent réellement sur la catégorie sélectionnée (déjà en place, inchangé).
 **Fichiers.** `client/src/pages/Coaches.jsx`.
 
+### 47. ✅ Fusion de coachs homonymes/mal orthographiés + fiche KPI par coach + retrait du filtre catégorie
+- **Fusion de coachs** : "Phillipe"/"Philipe" → "Philippe", "Enrique" → "Enric", "Nasser" → "Nacer",
+  "Myriam Aqua"/"Myriam (Aqua)" → une seule entrée — confirmé par le manager. Migration
+  `server/src/db/mergeCoachAliases.js` (comparaison sur la paire exacte prénom+nom, jamais sur le
+  prénom seul : deux personnes réelles distinctes peuvent partager un prénom, ex. les deux
+  "Myriam" — voir `coachTagsCorbeil.js` — distinguées par leur nom "(Contrat)" vs "Aqua"/"(Aqua)").
+  Réattribue séances/documents/planning récurrent vers le coach le plus complet puis supprime les
+  doublons. Roulée automatiquement au démarrage (Corbeil uniquement), idempotente.
+- **Bug découvert et corrigé au passage** : l'import de l'historique (`seedCorbeil.js`) associe un
+  coach par prénom seul, ambigu si deux coachs réels partagent ce prénom — les séances aqua de
+  "Myriam" ont pu atterrir sur la mauvaise homonyme ("Myriam (Contrat)" au lieu de "Myriam Aqua").
+  `reassignAquaSeancesToCoach()` (même fichier) réattribue toute séance de catégorie aqua mal
+  attribuée vers la bonne "Myriam", idempotent.
+- **Fiche KPI par coach** : cliquer sur un coach (Coaches.jsx) ouvre désormais une fiche stats
+  (au lieu du formulaire d'édition) : Cours donnés / Heures de cours / Effectif moyen, sur 3
+  colonnes (30 derniers jours / Depuis septembre / De tout temps). Un bouton "Modifier les
+  informations" bascule vers le formulaire d'édition existant. `GET /api/coaches/:id/stats`
+  (`server/src/routes/coaches.js`) ne compte que les séances effectivement données (effectué/payé).
+- **Retrait du filtre catégorie** (Prog./Effect./Annulés cliquables sur le Tableau de bord) : la
+  mise en valeur visuelle + le recalcul de Top Cours/Top Coachs ont été retirés à la demande de
+  l'utilisateur ("c'est pas exactement ce que je voulais, on reprendra ça plus tard") — le backend
+  (`GET /api/dashboard?statut=...`) reste en place, inutilisé, prêt à être réexploité plus tard.
+**Fichiers.** `server/src/db/mergeCoachAliases.js`, `server/src/db/coachAliasesCorbeil.js`,
+`server/src/index.js`, `server/src/routes/coaches.js`, `client/src/lib/api.js`,
+`client/src/pages/Coaches.jsx`.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

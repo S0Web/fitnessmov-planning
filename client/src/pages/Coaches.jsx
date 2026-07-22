@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Calendar, CalendarRange, Infinity as InfinityIcon } from 'lucide-react';
 import { api } from '../lib/api';
-import { DISCIPLINE_CONFIG } from '../lib/utils';
+import { DISCIPLINE_CONFIG, colorForUser } from '../lib/utils';
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -231,14 +231,93 @@ function CoachModal({ coach, onSave, onToggle, onDelete, onClose }) {
   );
 }
 
-// ── Page principale ────────────────────────────────────────────────────────────
+// ── Modale statistiques coach ───────────────────────────────────────────────────
 
-const CATEGORIE_LABELS = { programme: 'Programmés', effectue: 'Effectués', annule: 'Annulés' };
+function CoachStatsModal({ coach, onEdit, onClose }) {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    api.getCoachStats(coach.id).then(s => { if (!cancelled) setStats(s); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [coach.id]);
+
+  useEffect(() => {
+    const fn = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, [onClose]);
+
+  const ROWS = [
+    { key: 'nbCours',       label: 'Cours donnés',      fmt: (v) => v ?? '—' },
+    { key: 'heures',        label: 'Heures de cours',   fmt: (v) => v ? fmtH(v) : '—' },
+    { key: 'effectifMoyen', label: 'Effectif moyen',    fmt: (v) => v ?? '—' },
+  ];
+  const COLONNES = [
+    { key: 'derniers30j',     label: '30 derniers jours' },
+    { key: 'depuisSeptembre', label: 'Depuis septembre' },
+    { key: 'toutTemps',       label: 'De tout temps' },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div className="px-6 pt-5 pb-4 border-b flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0"
+            style={{ backgroundColor: colorForUser(coach.id) }}>
+            {coach.prenom?.[0]}{coach.nom?.[0]}
+          </div>
+          <h2 className="text-lg font-bold text-gray-800 truncate">{coach.prenom} {coach.nom}</h2>
+        </div>
+        <div className="px-6 py-4">
+          {stats === null ? (
+            <div className="text-center py-8 text-gray-400 text-sm">Chargement…</div>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead>
+                <tr>
+                  <th className="text-left px-2 py-1.5 text-xs font-bold text-gray-500 uppercase">​</th>
+                  {COLONNES.map(c => (
+                    <th key={c.key} className="px-2 py-1.5 text-xs font-bold text-gray-500 uppercase text-center">{c.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {ROWS.map((row, i) => (
+                  <tr key={row.key} style={{ backgroundColor: i % 2 === 0 ? '#f9fafb' : '#ffffff' }}>
+                    <td className="px-2 py-2 font-medium text-gray-700">{row.label}</td>
+                    {COLONNES.map(c => (
+                      <td key={c.key} className="px-2 py-2 text-center tabular-nums font-semibold" style={{ color: '#1a7a9b' }}>
+                        {row.fmt(stats[c.key]?.[row.key])}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+        <div className="px-6 pb-5 flex gap-2">
+          <button onClick={onClose}
+            className="flex-1 border border-gray-300 text-gray-600 rounded py-2 text-sm hover:bg-gray-50">Fermer</button>
+          <button onClick={onEdit}
+            className="flex-1 text-white rounded py-2 text-sm font-medium hover:opacity-90"
+            style={{ backgroundColor: '#2fa8cc' }}>
+            Modifier les informations
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Page principale ────────────────────────────────────────────────────────────
 
 export default function Coaches() {
   const [recap, setRecap]       = useState(null);
   const [dashboard, setDash]    = useState(null);
   const [modal, setModal]       = useState(null);
+  const [statsModal, setStatsModal] = useState(null);
   const [showInactifs, setShowInactifs] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const reqIdRef = useRef(0);
@@ -252,10 +331,6 @@ export default function Coaches() {
   const [anneeScolaire, setAnneeScolaire] = useState(() => getAcademicYear().year);
   const [plageDebut, setPlageDebut] = useState(() => getAcademicYear().debut);
   const [plageFin, setPlageFin]     = useState(() => getAcademicYear().fin);
-  // Tableau de bord : catégorie (clic sur Prog./Effect./Annulés) — mise en valeur +
-  // Top Cours/Top Coachs se recalculent sur cette seule catégorie.
-  const [statutCat, setStatutCat] = useState(null);
-
   const { months, debut, fin } = getLast13Months();
   const currentMois = (() => {
     const n = new Date();
@@ -263,10 +338,9 @@ export default function Coaches() {
   })();
 
   function dashboardParams() {
-    const base = periodeMode === 'tout' ? { periode: 'tout' }
+    return periodeMode === 'tout' ? { periode: 'tout' }
       : periodeMode === 'scolaire' ? { debut: `${anneeScolaire}-08-01`, fin: `${anneeScolaire + 1}-07-31` }
       : { debut: plageDebut, fin: plageFin };
-    return statutCat ? { ...base, statut: statutCat } : base;
   }
 
   const load = useCallback(async () => {
@@ -285,13 +359,9 @@ export default function Coaches() {
       if (myId === reqIdRef.current) setRefreshing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [inclureEffectue, inclurePaye, periodeMode, anneeScolaire, plageDebut, plageFin, statutCat]);
+  }, [inclureEffectue, inclurePaye, periodeMode, anneeScolaire, plageDebut, plageFin]);
 
   useEffect(() => { load(); }, [load]);
-
-  function toggleCategorie(cat) {
-    setStatutCat(prev => prev === cat ? null : cat);
-  }
 
   async function handleSave(form) {
     if (modal?.id) await api.updateCoach(modal.id, form);
@@ -386,7 +456,7 @@ export default function Coaches() {
                 return (
                   <tr key={coach.id} style={{ backgroundColor: bg }} className={coach.actif ? '' : 'opacity-40'}>
                     <td className="sticky left-0 z-10 border-b border-gray-100 px-2 py-1.5 font-semibold" style={{ backgroundColor: bg, maxWidth: 92 }}>
-                      <button onClick={() => setModal(coach)} title={`${coach.prenom} ${coach.nom}`}
+                      <button onClick={() => setStatsModal(coach)} title={`${coach.prenom} ${coach.nom}`}
                         className="hover:underline text-left truncate block w-full" style={{ color: '#1a7a9b' }}>
                         {coach.prenom} {coach.nom}
                       </button>
@@ -475,34 +545,22 @@ export default function Coaches() {
                   className="border border-gray-300 rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-sky-300" />
               </div>
             )}
-            {statutCat && (
-              <button onClick={() => setStatutCat(null)}
-                className="ml-1 text-xs px-2.5 py-1 rounded-full bg-sky-100 text-sky-700 hover:bg-sky-200">
-                Top Cours/Coachs filtrés : {CATEGORIE_LABELS[statutCat]} ✕
-              </button>
-            )}
           </div>
 
-          {/* KPI cards (cliquables : filtrent Top Cours/Top Coachs par catégorie) */}
+          {/* KPI cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-            <button onClick={() => toggleCategorie('programme')}
-              className="border-2 rounded-lg p-5 text-center transition-shadow"
-              style={{ borderColor: '#5bcae8', backgroundColor: '#eef9fd', boxShadow: statutCat === 'programme' ? '0 0 0 3px #5bcae880' : undefined }}>
+            <div className="border-2 rounded-lg p-5 text-center" style={{ borderColor: '#5bcae8', backgroundColor: '#eef9fd' }}>
               <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Cours programmés</div>
               <div className="text-4xl font-extrabold" style={{ color: '#1a7a9b' }}>{kpi.total ?? '—'}</div>
-            </button>
-            <button onClick={() => toggleCategorie('effectue')}
-              className="border-2 rounded-lg p-5 text-center transition-shadow"
-              style={{ borderColor: '#86efac', backgroundColor: '#f0fdf4', boxShadow: statutCat === 'effectue' ? '0 0 0 3px #86efac80' : undefined }}>
+            </div>
+            <div className="border-2 rounded-lg p-5 text-center" style={{ borderColor: '#86efac', backgroundColor: '#f0fdf4' }}>
               <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Cours effectués</div>
               <div className="text-4xl font-extrabold text-green-600">{kpi.effectues ?? '—'}</div>
-            </button>
-            <button onClick={() => toggleCategorie('annule')}
-              className="border-2 rounded-lg p-5 text-center transition-shadow"
-              style={{ borderColor: '#fca5a5', backgroundColor: '#fef2f2', boxShadow: statutCat === 'annule' ? '0 0 0 3px #fca5a580' : undefined }}>
+            </div>
+            <div className="border-2 rounded-lg p-5 text-center" style={{ borderColor: '#fca5a5', backgroundColor: '#fef2f2' }}>
               <div className="text-xs font-bold uppercase tracking-wide text-gray-500 mb-2">Taux d&apos;annulation</div>
               <div className="text-4xl font-extrabold text-red-500">{pct(kpi.annules, kpi.total)}</div>
-            </button>
+            </div>
           </div>
 
           {/* Tableau mensuel + graphique */}
@@ -513,18 +571,11 @@ export default function Coaches() {
               <table className="w-full border-collapse text-xs min-w-[520px]">
                 <thead>
                   <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
-                    {['Mois','Prog.','Effect.','Annulés','Annul. %','Effectif','Moy.','Heures'].map((h, i) => {
-                      const cat = { 1: 'programme', 2: 'effectue', 3: 'annule' }[i];
-                      const actif = cat && statutCat === cat;
-                      return (
-                        <th key={h}
-                          onClick={cat ? () => toggleCategorie(cat) : undefined}
-                          title={cat ? `Filtrer Top Cours/Top Coachs par : ${CATEGORIE_LABELS[cat]}` : undefined}
-                          className={`px-2 py-1.5 font-bold ${i === 0 ? 'text-left' : 'text-center'} ${cat ? 'cursor-pointer select-none hover:bg-white/10' : ''} ${actif ? 'underline decoration-2 underline-offset-2' : ''}`}>
-                          {h}
-                        </th>
-                      );
-                    })}
+                    {['Mois','Prog.','Effect.','Annulés','Annul. %','Effectif','Moy.','Heures'].map((h, i) => (
+                      <th key={h} className={`px-2 py-1.5 font-bold ${i === 0 ? 'text-left' : 'text-center'}`}>
+                        {h}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
@@ -570,9 +621,7 @@ export default function Coaches() {
           {/* Top cours + Top coachs */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="overflow-x-auto">
-              <h3 className="text-sm font-bold text-gray-700 mb-2">
-                Top Cours{statutCat && <span className="text-gray-400 font-normal"> · {CATEGORIE_LABELS[statutCat]}</span>}
-              </h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-2">Top Cours</h3>
               <table className="w-full border-collapse text-xs min-w-[360px]">
                 <thead>
                   <tr style={{ backgroundColor: '#2fa8cc', color: '#fff' }}>
@@ -595,9 +644,7 @@ export default function Coaches() {
             </div>
 
             <div className="overflow-x-auto">
-              <h3 className="text-sm font-bold text-gray-700 mb-2">
-                Top Coachs{statutCat && <span className="text-gray-400 font-normal"> · {CATEGORIE_LABELS[statutCat]}</span>}
-              </h3>
+              <h3 className="text-sm font-bold text-gray-700 mb-2">Top Coachs</h3>
               <table className="w-full border-collapse text-xs min-w-[360px]">
                 <thead>
                   <tr style={{ backgroundColor: '#c9a464', color: '#fff' }}>
@@ -620,6 +667,15 @@ export default function Coaches() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modale statistiques coach */}
+      {statsModal !== null && (
+        <CoachStatsModal
+          coach={statsModal}
+          onEdit={() => { setModal(statsModal); setStatsModal(null); }}
+          onClose={() => setStatsModal(null)}
+        />
       )}
 
       {/* Modale coach */}

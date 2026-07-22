@@ -17,6 +17,12 @@ seedAnnuaire(); // pré-remplit l'annuaire sur Corbeil-Essonnes si la table est 
 const { backfillCoachTags } = require('./db/backfillCoachTags');
 backfillCoachTags('Corbeil-Essonnes', require('./db/coachTagsCorbeil'));
 
+const { mergeCoachAliases, reassignAquaSeancesToCoach } = require('./db/mergeCoachAliases');
+mergeCoachAliases('Corbeil-Essonnes', require('./db/coachAliasesCorbeil'));
+// L'import historique associait "Myriam" par prénom seul, ambigu entre les deux
+// coachs réelles "Myriam" (Aqua vs Contrat) — corrige les séances aqua mal attribuées.
+reassignAquaSeancesToCoach('Corbeil-Essonnes', 'Myriam', 'Aqua', ['(Contrat)', '']);
+
 const { recoverManager } = require('./db/recoverManager');
 recoverManager('Ballancourt-sur-Essonne', 'Sofiann'); // filet de sécurité si le seul manager a été supprimé définitivement
 
