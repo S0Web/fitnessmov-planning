@@ -485,6 +485,30 @@ dynamique qui change avec le temps — la liste blanche devra être mise à jour
 `server/src/index.js`, `server/src/routes/coaches.js`, `client/src/lib/api.js`,
 `client/src/pages/Coaches.jsx`.
 
+### 48. ✅ Nouvel onglet Formation (blog interne, markdown, captures d'écran)
+- Nouvel onglet "Formation" dans la navbar : liste d'articles type blog (table
+  `formation_articles` — titre, contenu markdown, ordre, auteur). Lecture ouverte à
+  tout utilisateur authentifié, écriture (créer/modifier/supprimer/réordonner)
+  réservée aux managers (`requireManager`, pas `requireWriteAccess` — volontairement
+  plus strict qu'une simple IP autorisée : seul le rôle manager édite).
+- Éditeur markdown restreint (`client/src/components/MarkdownEditor.jsx`) :
+  boutons Gras/Italique (entourent la sélection), Titre (préfixe `## `),
+  Séparateur (insère `---`), et upload d'image (bouton fichier → `POST
+  /api/formation/upload-image` → insère `![](url)`). Bascule Éditer/Aperçu.
+- Rendu : `marked` (parsing markdown) + `DOMPurify` (assainissement — vérifié en
+  local qu'un `<script>`/`onerror` injecté dans le contenu est bien neutralisé,
+  défense en profondeur même si le contenu est censé venir d'un manager de
+  confiance). Styles dédiés `.formation-content` dans `index.css` (pas de plugin
+  Tailwind Typography installé).
+- Images stockées sur le volume persistant (`<dossier de la DB>/uploads/formation/`,
+  jamais dans `server/public` qui est écrasé à chaque déploiement du client),
+  servies via `app.use('/uploads', express.static(...))`.
+**Fichiers.** `server/src/db/database.js` (table), `server/src/routes/formation.js`,
+`server/src/index.js`, `client/src/lib/api.js`, `client/src/lib/markdown.js`,
+`client/src/components/MarkdownEditor.jsx`, `client/src/pages/Formation.jsx`,
+`client/src/pages/FormationArticle.jsx`, `client/src/App.jsx`,
+`client/src/components/Layout.jsx`, `client/src/index.css`.
+
 ---
 
 ## Idées écartées (ne pas implémenter sans demande explicite)

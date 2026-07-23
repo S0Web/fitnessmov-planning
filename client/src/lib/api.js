@@ -99,6 +99,29 @@ export const api = {
   dupliquerSemainePersonnel: (semaine_source, semaine_cible) =>
     req('/personnel-creneaux/dupliquer', { method: 'POST', body: JSON.stringify({ semaine_source, semaine_cible }) }),
 
+  // Formation (articles type blog)
+  getFormationArticles: () => req('/formation'),
+  getFormationArticle:  (id) => req(`/formation/${id}`),
+  createFormationArticle: (data) => req('/formation', { method: 'POST', body: JSON.stringify(data) }),
+  updateFormationArticle: (id, data) => req(`/formation/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteFormationArticle: (id) => req(`/formation/${id}`, { method: 'DELETE' }),
+  reorderFormationArticle: (id, direction) => req(`/formation/${id}/ordre`, { method: 'PATCH', body: JSON.stringify({ direction }) }),
+  uploadFormationImage: async (file) => {
+    const token = getToken();
+    const body = new FormData();
+    body.append('image', file);
+    const res = await fetch(`${BASE}/formation/upload-image`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body,
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || res.statusText);
+    }
+    return res.json();
+  },
+
   // IP autorisées (accès en écriture depuis un compte non-manager)
   getIpAutorisees: () => req('/ip-autorisees'),
   addIpAutorisee:  (ip, label) => req('/ip-autorisees', { method: 'POST', body: JSON.stringify({ ip, label }) }),

@@ -522,4 +522,19 @@ db.run(`
   )
 `);
 
+// ─── Formation : articles type blog, éditables par les managers, consultables
+// par tous les utilisateurs authentifiés. Contenu au format markdown restreint
+// (gras, italique, titres, séparateur, images). ───
+db.run(`
+  CREATE TABLE IF NOT EXISTS formation_articles (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    titre       TEXT NOT NULL,
+    contenu     TEXT NOT NULL DEFAULT '',
+    ordre       INTEGER NOT NULL DEFAULT 0,
+    auteur_id   INTEGER REFERENCES app_users(id),
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at  TEXT NOT NULL DEFAULT (datetime('now'))
+  )
+`);
+
 module.exports = db;

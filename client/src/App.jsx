@@ -8,6 +8,8 @@ import Planning from './pages/Planning';
 import PlanningPersonnel from './pages/PlanningPersonnel';
 import Coaches from './pages/Coaches';
 import Annuaire from './pages/Annuaire';
+import Formation from './pages/Formation';
+import FormationArticle from './pages/FormationArticle';
 import Settings from './pages/Settings';
 
 function ProtectedRoutes() {
@@ -25,6 +27,8 @@ function ProtectedRoutes() {
         <Route path="/planning-personnel" element={<PlanningPersonnel />} />
         <Route path="/coaches"            element={<Coaches />} />
         <Route path="/annuaire"           element={<Annuaire />} />
+        <Route path="/formation"          element={<Formation />} />
+        <Route path="/formation/:id"      element={<FormationArticle />} />
         <Route path="/parametres"         element={<Settings />} />
         <Route path="*"                   element={<Navigate to="/" replace />} />
       </Routes>

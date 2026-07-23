@@ -11,6 +11,7 @@ const ALL_LINKS = [
   { to: '/planning-personnel', label: 'Planning personnel' },
   { to: '/coaches',             label: 'Coaches' },
   { to: '/annuaire',           label: 'Annuaire' },
+  { to: '/formation',          label: 'Formation' },
 ];
 
 function Bubble({ user, size = 'h-7 w-7' }) {

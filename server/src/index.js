@@ -42,6 +42,7 @@ const personnelCreneauxRouter = require('./routes/personnelCreneaux');
 const annuaireRouter  = require('./routes/annuaire');
 const adminRouter     = require('./routes/admin');
 const ipAutoriseesRouter = require('./routes/ipAutorisees');
+const formationRouter = require('./routes/formation');
 
 const app  = express();
 const PORT = process.env.PORT || 3001;
@@ -85,10 +86,18 @@ app.use('/api/personnel-creneaux',  requireAuth, requireWriteAccess, personnelCr
 app.use('/api/annuaire',   requireAuth, requireAnnuaireAccess, annuaireRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/ip-autorisees', ipAutoriseesRouter);
+// Formation : chaque route gère elle-même son niveau d'accès (lecture pour tout
+// utilisateur authentifié, écriture réservée aux managers) — pas de middleware ici.
+app.use('/api/formation', formationRouter);
 
 // Servir le front
 const clientDist = path.join(__dirname, '../public');
 app.use(express.static(clientDist));
+
+// Images des articles Formation : stockées sur le volume persistant (jamais dans
+// server/public, écrasé à chaque déploiement du client).
+const DB_PATH_FOR_UPLOADS = process.env.DB_PATH || path.join(__dirname, '../data/fitnessmov.db');
+app.use('/uploads', express.static(path.join(path.dirname(DB_PATH_FOR_UPLOADS), 'uploads')));
 app.get(/^(?!\/api).*/, (req, res) => {
   res.sendFile(path.join(clientDist, 'index.html'));
 });
